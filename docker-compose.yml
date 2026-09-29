@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: hanok-db
+    environment:
+      POSTGRES_USER: hanok
+      POSTGRES_PASSWORD: hanok_dev_pw
+      POSTGRES_DB: hanok
+      TZ: Asia/Seoul
+    ports:
+      - "5432:5432"
+    volumes:
+      - hanok-pgdata:/var/lib/postgresql/data
+
+volumes:
+  hanok-pgdata:
