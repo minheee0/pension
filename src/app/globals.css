@@ -1,26 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --hanji: #f6f0e4;  /* 한지 */
+  --wood: #6b4a2f;   /* 목재 */
+  --giwa: #3f4447;   /* 기와 */
+  --ink: #2a2622;
+  --line: #dccfb8;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-hanji: var(--hanji);
+  --color-wood: var(--wood);
+  --color-giwa: var(--giwa);
+  --color-ink: var(--ink);
+  --color-line: var(--line);
+  --font-serif: var(--font-serif-kr), serif;
+  --font-sans: var(--font-sans-kr), sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+body { background: var(--hanji); color: var(--ink); line-height: 1.75; }
