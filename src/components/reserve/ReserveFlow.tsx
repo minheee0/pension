@@ -24,6 +24,13 @@ interface Sel { on: boolean; qty: number; useDate: string; useTime: string }
 interface Held { bookingNo: string; holdExpiresAt: string; payAmount: number }
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
+// 휴대폰 번호: 숫자만, 딱 11자리. 붙여넣기("010-1234-5678", "+82 10-1234-5678")도 자동 정리한다.
+const sanitizePhone = (raw: string) => {
+  let d = raw.replace(/\D/g, "");
+  if (d.startsWith("82")) d = "0" + d.slice(2);
+  return d.slice(0, 11);
+};
+const PHONE_OK = /^01[016789]\d{8}$/;
 const EMPTY_SEL: Sel = { on: false, qty: 1, useDate: "", useTime: "" };
 const inputCls = "mt-1 block w-full rounded border border-line bg-white px-3 py-2";
 
@@ -160,7 +167,8 @@ export default function ReserveFlow(props: {
   }, [checkIn, checkOut, guests, payloadKey]);
 
   // ---- 점유
-  const canSubmit = !!quote?.available && !quoting && !incomplete && !!name.trim() && !!phone.trim() && agreed && !submitting;
+  const phoneValid = PHONE_OK.test(phone);
+  const canSubmit = !!quote?.available && !quoting && !incomplete && !!name.trim() && phoneValid && agreed && !submitting;
 
   async function submit() {
     if (!quote || !checkIn || !checkOut) return;
@@ -281,7 +289,22 @@ export default function ReserveFlow(props: {
           <h2 className="font-serif text-2xl font-bold">{optionList.length > 0 ? "4" : "3"}. 예약자 정보</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="text-sm">이름 *<input className={inputCls} value={name} maxLength={50} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
-            <label className="text-sm">휴대폰 번호 *<input className={inputCls} type="tel" inputMode="tel" placeholder="010-0000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" /></label>
+            <div className="text-sm">
+              <label>휴대폰 번호 *
+                <input className={inputCls} type="tel" inputMode="numeric" pattern="[0-9]*" maxLength={11}
+                  placeholder="01012345678" value={phone} autoComplete="tel-national"
+                  aria-invalid={phone.length > 0 && !phoneValid} aria-describedby="phone-help"
+                  onChange={(e) => setPhone(sanitizePhone(e.target.value))} />
+              </label>
+              <p id="phone-help" className={`mt-1 text-xs ${
+                phoneValid ? "text-green-800"
+                : phone.length === 11 ? "text-red-800" : "text-giwa"}`}>
+                {phoneValid ? "✓ 올바른 번호입니다"
+                  : phone.length === 11 ? "010 등 휴대폰 번호로 시작해야 합니다"
+                  : phone.length === 0 ? "하이픈(-) 없이 숫자 11자리만 입력해 주세요"
+                  : `${phone.length}/11자리`}
+              </p>
+            </div>
             <label className="text-sm sm:col-span-2">이메일 (선택)<input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
             <label className="text-sm sm:col-span-2">요청사항 (선택)<textarea className={inputCls} rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} /></label>
           </div>
