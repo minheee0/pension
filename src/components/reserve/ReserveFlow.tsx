@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import RangeCalendar, { CalDay, addDays, fmtDate, shiftMonth, won } from "./RangeCalendar";
 import RefundTable from "@/components/RefundTable";
+import PayButton from "./PayButton";
 import type { PolicyView } from "@/server/refund/table";
 import { SITE } from "@/lib/site";
 
@@ -24,11 +25,18 @@ interface Sel { on: boolean; qty: number; useDate: string; useTime: string }
 interface Held { bookingNo: string; holdExpiresAt: string; payAmount: number }
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
-// 휴대폰 번호: 숫자만, 딱 11자리. 붙여넣기("010-1234-5678", "+82 10-1234-5678")도 자동 정리한다.
+// 휴대폰 번호: 숫자만 받고 최대 11개까지. 붙여넣기("010-1234-5678", "+82 10-1234-5678")도 자동 정리한다.
 const sanitizePhone = (raw: string) => {
   let d = raw.replace(/\D/g, "");
   if (d.startsWith("82")) d = "0" + d.slice(2);
   return d.slice(0, 11);
+};
+// 입력하는 동안 010-1234-5678 형태로 하이픈을 자동으로 넣어 준다
+const formatPhone = (raw: string) => {
+  const d = sanitizePhone(raw);
+  if (d.length <= 3) return d;
+  if (d.length <= 7) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
 };
 const PHONE_OK = /^01[016789]\d{8}$/;
 const EMPTY_SEL: Sel = { on: false, qty: 1, useDate: "", useTime: "" };
@@ -62,6 +70,7 @@ export default function ReserveFlow(props: {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const [email, setEmail] = useState("");
   const [memo, setMemo] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -167,7 +176,8 @@ export default function ReserveFlow(props: {
   }, [checkIn, checkOut, guests, payloadKey]);
 
   // ---- 점유
-  const phoneValid = PHONE_OK.test(phone);
+  const phoneDigits = phone.replace(/\D/g, "");
+  const phoneValid = PHONE_OK.test(phoneDigits);
   const canSubmit = !!quote?.available && !quoting && !incomplete && !!name.trim() && phoneValid && agreed && !submitting;
 
   async function submit() {
@@ -179,7 +189,7 @@ export default function ReserveFlow(props: {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           checkIn, checkOut, guests, options: payload,
-          guest: { name, phone, email: email || undefined },
+          guest: { name, phone: phoneDigits, email: email || undefined },
           memo: memo || undefined, agreedTerms: agreed, expectedTotal: quote.quote.totalAmount,
         }),
       });
@@ -291,18 +301,14 @@ export default function ReserveFlow(props: {
             <label className="text-sm">이름 *<input className={inputCls} value={name} maxLength={50} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
             <div className="text-sm">
               <label>휴대폰 번호 *
-                <input className={inputCls} type="tel" inputMode="numeric" pattern="[0-9]*" maxLength={11}
-                  placeholder="01012345678" value={phone} autoComplete="tel-national"
-                  aria-invalid={phone.length > 0 && !phoneValid} aria-describedby="phone-help"
-                  onChange={(e) => setPhone(sanitizePhone(e.target.value))} />
+                <input className={inputCls} type="tel" inputMode="numeric" maxLength={13}
+                  placeholder="010-0000-0000" value={phone} autoComplete="tel-national"
+                  aria-invalid={phoneTouched && phone.length > 0 && !phoneValid} aria-describedby="phone-help"
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
+                  onBlur={() => setPhoneTouched(true)} />
               </label>
-              <p id="phone-help" className={`mt-1 text-xs ${
-                phoneValid ? "text-green-800"
-                : phone.length === 11 ? "text-red-800" : "text-giwa"}`}>
-                {phoneValid ? "✓ 올바른 번호입니다"
-                  : phone.length === 11 ? "010 등 휴대폰 번호로 시작해야 합니다"
-                  : phone.length === 0 ? "하이픈(-) 없이 숫자 11자리만 입력해 주세요"
-                  : `${phone.length}/11자리`}
+              <p id="phone-help" className="mt-1 min-h-4 text-xs text-red-800">
+                {phoneTouched && phone.length > 0 && !phoneValid ? "휴대폰 번호를 끝까지 정확히 입력해 주세요" : ""}
               </p>
             </div>
             <label className="text-sm sm:col-span-2">이메일 (선택)<input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
@@ -372,8 +378,7 @@ function HeldView({ held, onRestart }: { held: Held; onRestart: () => void }) {
           <p className="mt-3">예약번호 <b className="tracking-wider">{held.bookingNo}</b></p>
           <p className="mt-1">결제 금액 <b>{won(held.payAmount)}</b></p>
           <p className="mt-1 text-giwa">남은 시간 <b className="text-red-800">{mm}:{ss}</b> · 이 시간 안에 결제를 마쳐야 예약이 확정됩니다.</p>
-          {/* TODO(결제 단계): 이 버튼에서 결제창을 열고, 웹훅으로 confirmStay 를 호출한다 */}
-          <button disabled className="mt-5 w-full rounded bg-wood px-4 py-3 text-hanji opacity-40">결제하기 (결제 연동 준비 중)</button>
+          <div className="mt-5"><PayButton bookingNo={held.bookingNo} label={`${won(held.payAmount)} 결제하기`} /></div>
         </>
       ) : (
         <>
