@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import RefundTable from "@/components/RefundTable";
+import { pool } from "@/server/db";
+import { getPolicyView } from "@/server/booking/policy";
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "이용안내" };
+export const dynamic = "force-dynamic"; // 환불표·성수기는 DB 값을 그대로 보여준다
 
 const FAQ = [
   ["영유아도 인원에 포함되나요?", "36개월 미만은 인원에서 제외됩니다."],
@@ -10,7 +14,8 @@ const FAQ = [
   ["다른 손님과 함께 쓰나요?", "아니요. 독채라 예약하신 한 팀만 이용합니다."],
 ];
 
-export default function Guide() {
+export default async function Guide() {
+  const view = await getPolicyView(pool).catch(() => null);
   return (
     <div className="mx-auto max-w-3xl px-5 py-16">
       <h1 className="font-serif text-4xl font-bold text-wood">이용안내</h1>
@@ -29,9 +34,9 @@ export default function Guide() {
 
       <section className="mt-10">
         <h2 className="font-serif text-2xl font-bold">취소 · 환불 규정</h2>
-        <p className="mt-2 text-giwa">
-          규정이 확정되면 성수기 기간과 함께 이곳에 게시되며, 결제 직전 화면에서도 다시 안내합니다.
-        </p>
+        <div className="mt-3">
+          {view ? <RefundTable view={view} /> : <p className="text-giwa">규정을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>}
+        </div>
       </section>
 
       <section className="mt-10">

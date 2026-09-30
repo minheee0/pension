@@ -139,6 +139,8 @@ export interface OptionLine {
   amount: number;
   useDate: string | null;
   useTime: string | null;
+  deadlineDaysBefore: number; // 신청·취소 마감 규칙(예약 당시 값). 환불 계산에 사용
+  deadlineTime: string;       // 'HH:MM'
 }
 
 export interface Quote {
@@ -266,6 +268,8 @@ async function priceOption(
   return {
     optionId: Number(o.id), code: o.code, name: o.name, qty: req.qty, unitPrice: o.price, amount,
     useDate: req.useDate ?? null, useTime: req.useTime ?? null,
+    deadlineDaysBefore: o.order_deadline_days_before,
+    deadlineTime: String(o.order_deadline_time).slice(0, 5),
   };
 }
 

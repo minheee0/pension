@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import RangeCalendar, { CalDay, addDays, fmtDate, shiftMonth, won } from "./RangeCalendar";
+import RefundTable from "@/components/RefundTable";
+import type { PolicyView } from "@/server/refund/table";
 import { SITE } from "@/lib/site";
 
 interface OptionInfo {
@@ -36,6 +38,8 @@ export default function ReserveFlow(props: {
   const [month, setMonth] = useState(initIn ? initIn.slice(0, 7) : nowMonth);
   const [days, setDays] = useState<Record<string, CalDay>>({});
   const [loadingCal, setLoadingCal] = useState(true);
+  const [calErr, setCalErr] = useState<string | null>(null);
+  const [policy, setPolicy] = useState<PolicyView | null>(null);
   const [checkIn, setCheckIn] = useState<string | null>(initIn);
   const [checkOut, setCheckOut] = useState<string | null>(initOut);
   const [guests, setGuests] = useState(
@@ -59,23 +63,35 @@ export default function ReserveFlow(props: {
   const [held, setHeld] = useState<Held | null>(null);
 
   // ---- 달력 데이터 (보이는 달 + 다음 달: 월말 체크인 → 다음 달 체크아웃 선택을 위해)
-  const loadMonth = useCallback(async (m: string) => {
+  const loadMonth = useCallback(async (m: string): Promise<boolean> => {
     try {
       const r = await fetch(`/api/calendar?month=${m}`, { cache: "no-store" });
-      if (!r.ok) return;
+      if (!r.ok) return false;
       const j = (await r.json()) as { days: CalDay[] };
       setDays((prev) => {
         const next = { ...prev };
         for (const d of j.days) next[d.date] = d;
         return next;
       });
-    } catch { /* 네트워크 오류는 무시하고 다음 조작 때 재시도 */ }
+      return true;
+    } catch {
+      return false;
+    }
   }, []);
 
-  useEffect(() => {
+  const reloadCalendar = useCallback(async (m: string) => {
     setLoadingCal(true);
-    Promise.all([loadMonth(month), loadMonth(shiftMonth(month, 1))]).finally(() => setLoadingCal(false));
-  }, [month, loadMonth]);
+    setCalErr(null);
+    const [ok] = await Promise.all([loadMonth(m), loadMonth(shiftMonth(m, 1))]);
+    if (!ok) setCalErr("달력을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    setLoadingCal(false);
+  }, [loadMonth]);
+
+  useEffect(() => { reloadCalendar(month); }, [month, reloadCalendar]);
+
+  useEffect(() => {
+    fetch("/api/policy").then((r) => (r.ok ? r.json() : null)).then((j) => j && setPolicy(j)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/options").then((r) => r.json()).then((j) => setOptionList(j.options ?? [])).catch(() => {});
@@ -162,7 +178,7 @@ export default function ReserveFlow(props: {
       const j = await res.json();
       if (res.status === 201) { setHeld(j); return; }
       setSubmitErr(j.error?.message ?? "예약을 진행하지 못했습니다");
-      if (j.error?.code === "UNAVAILABLE") { setCheckIn(null); setCheckOut(null); loadMonth(month); loadMonth(shiftMonth(month, 1)); }
+      if (j.error?.code === "UNAVAILABLE") { setCheckIn(null); setCheckOut(null); reloadCalendar(month); }
     } catch {
       setSubmitErr("네트워크 오류가 발생했습니다. 다시 시도해 주세요.");
     } finally {
@@ -170,7 +186,7 @@ export default function ReserveFlow(props: {
     }
   }
 
-  if (held) return <HeldView held={held} onRestart={() => { setHeld(null); setCheckIn(null); setCheckOut(null); loadMonth(month); }} />;
+  if (held) return <HeldView held={held} onRestart={() => { setHeld(null); setCheckIn(null); setCheckOut(null); reloadCalendar(month); }} />;
 
   const q = quote?.quote;
   const patch = (id: number, p: Partial<Sel>) =>
@@ -185,6 +201,12 @@ export default function ReserveFlow(props: {
             {checkIn ? `체크인 ${fmtDate(checkIn)}${checkOut ? ` → 체크아웃 ${fmtDate(checkOut)} (${nightDates.length}박)` : " · 체크아웃 날짜를 선택하세요"}` : "체크인 날짜를 선택하세요"}
             {" "}· 체크인 {SITE.checkIn} / 체크아웃 {SITE.checkOut}
           </p>
+          {calErr && (
+            <div role="alert" className="mb-3 rounded border border-red-800/30 bg-red-50 p-3 text-sm text-red-800">
+              {calErr}
+              <button type="button" onClick={() => reloadCalendar(month)} className="ml-2 underline">다시 시도</button>
+            </div>
+          )}
           <RangeCalendar month={month} minMonth={nowMonth} days={days} loading={loadingCal}
             checkIn={checkIn} checkOut={checkOut} clickable={clickable} onPick={pick} onMonth={setMonth} />
         </section>
@@ -265,6 +287,13 @@ export default function ReserveFlow(props: {
           </div>
           <p className="mt-2 text-xs text-giwa">예약 확인과 안내 문자 발송에만 사용하며, 조회 시 예약번호와 함께 필요합니다.</p>
         </section>
+
+        {policy && (
+          <section>
+            <h2 className="font-serif text-2xl font-bold">{optionList.length > 0 ? "5" : "4"}. 취소·환불 규정</h2>
+            <div className="mt-3 rounded-lg border border-line bg-white/60 p-4"><RefundTable view={policy} /></div>
+          </section>
+        )}
       </div>
 
       <aside className="md:sticky md:top-20 md:self-start">
@@ -290,7 +319,7 @@ export default function ReserveFlow(props: {
 
           <label className="mt-5 flex items-start gap-2 text-sm">
             <input type="checkbox" className="mt-1" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-            <span>취소·환불 규정을 확인했으며 동의합니다. (<a href="/guide" target="_blank" className="underline">이용안내</a>)</span>
+            <span>위 취소·환불 규정을 확인했으며 동의합니다.</span>
           </label>
           {submitErr && <p className="mt-3 text-sm text-red-800">{submitErr}</p>}
           <button type="button" onClick={submit} disabled={!canSubmit}
