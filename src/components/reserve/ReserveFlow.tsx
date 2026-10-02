@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import RangeCalendar, { CalDay, addDays, fmtDate, shiftMonth, won } from "./RangeCalendar";
 import RefundTable from "@/components/RefundTable";
-import PayButton from "./PayButton";
+import PaySection from "./PaySection";
 import type { PolicyView } from "@/server/refund/table";
 import { SITE } from "@/lib/site";
 
@@ -180,6 +180,16 @@ export default function ReserveFlow(props: {
   const phoneValid = PHONE_OK.test(phoneDigits);
   const canSubmit = !!quote?.available && !quoting && !incomplete && !!name.trim() && phoneValid && agreed && !submitting;
 
+  // 버튼이 꺼져 있을 때 무엇이 빠졌는지 알려 주기 위한 목록
+  const missing: string[] = [];
+  if (!checkIn || !checkOut) missing.push("날짜 선택");
+  else if (quoteErr) missing.push("선택한 기간 확인 (위 요금 안내 참고)");
+  else if (quote && !quote.available) missing.push("예약 가능한 날짜");
+  if (incomplete) missing.push("옵션 이용 날짜·시간");
+  if (!name.trim()) missing.push("이름");
+  if (!phoneValid) missing.push("휴대폰 번호");
+  if (!agreed) missing.push("환불 규정 동의");
+
   async function submit() {
     if (!quote || !checkIn || !checkOut) return;
     setSubmitting(true); setSubmitErr(null);
@@ -355,6 +365,9 @@ export default function ReserveFlow(props: {
             className="mt-4 w-full rounded bg-wood px-4 py-3 text-hanji hover:bg-giwa disabled:cursor-not-allowed disabled:opacity-40">
             {submitting ? "처리 중…" : "예약 진행하기"}
           </button>
+          {!canSubmit && !submitting && missing.length > 0 && (
+            <p className="mt-2 text-xs text-red-800">아직 필요한 항목: {missing.join(" · ")}</p>
+          )}
           <p className="mt-2 text-xs text-giwa">버튼을 누르면 날짜가 15분간 임시 확보됩니다.</p>
         </div>
       </aside>
@@ -378,7 +391,7 @@ function HeldView({ held, onRestart }: { held: Held; onRestart: () => void }) {
           <p className="mt-3">예약번호 <b className="tracking-wider">{held.bookingNo}</b></p>
           <p className="mt-1">결제 금액 <b>{won(held.payAmount)}</b></p>
           <p className="mt-1 text-giwa">남은 시간 <b className="text-red-800">{mm}:{ss}</b> · 이 시간 안에 결제를 마쳐야 예약이 확정됩니다.</p>
-          <div className="mt-5"><PayButton bookingNo={held.bookingNo} label={`${won(held.payAmount)} 결제하기`} /></div>
+          <PaySection bookingNo={held.bookingNo} amount={held.payAmount} />
         </>
       ) : (
         <>

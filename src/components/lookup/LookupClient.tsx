@@ -1,19 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import AccountBox from "@/components/reserve/AccountBox";
+import { BANKS } from "@/lib/banks";
 import { formatPhone, PHONE_OK, sanitizePhone } from "@/lib/phone";
 import { SITE } from "@/lib/site";
 
 interface Line { kind: string; label: string; amount: number; deduct: number; refund: number; deductRate: number }
 interface Preview { daysBefore: number; lines: Line[]; totalAmount: number; deductTotal: number; refundTotal: number }
-interface Assess { allowed: boolean; reason?: string; expectedRefund: number; preview: Preview | null }
+interface Assess { allowed: boolean; reason?: string; expectedRefund: number; refundAccountRequired: boolean; preview: Preview | null }
 interface View {
   booking: {
     bookingNo: string; status: string; guestName: string; phoneLast4: string; checkIn: string; checkOut: string; nights: number; guests: number;
     roomTotal: number; extraGuestFee: number; optionTotal: number; totalAmount: number;
     options: { name: string; qty: number; amount: number; useDate: string | null; useTime: string | null }[];
   };
-  payment: { status: string; method: string | null; amount: number; paidAt: string | null; receiptUrl: string | null } | null;
+  payment: { status: string; method: string | null; amount: number; paidAt: string | null; receiptUrl: string | null; cashReceiptUrl: string | null;
+    virtualAccount: { bankCode: string; accountNumber: string; holderName: string | null; dueDate: string | null } | null } | null;
   refund: { amount: number; deductAmount: number; status: string } | null;
   cancel: Assess;
 }
@@ -35,6 +38,9 @@ export default function LookupClient() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [bank, setBank] = useState("");
+  const [acctNo, setAcctNo] = useState("");
+  const [holder, setHolder] = useState("");
 
   const phoneDigits = sanitizePhone(phone);
   const formOk = bookingNo.trim().length >= 11 && PHONE_OK.test(phoneDigits);
@@ -53,12 +59,15 @@ export default function LookupClient() {
     } catch { setErr("네트워크 오류가 발생했습니다. 다시 시도해 주세요"); } finally { setBusy(false); }
   }
 
+  const acctOk = !!bank && acctNo.replace(/\D/g, "").length >= 8 && holder.trim().length > 0;
+
   async function cancel() {
     if (!view) return;
     setBusy(true); setErr(null);
     try {
-      const r = await post("/api/bookings/cancel", { bookingNo: view.booking.bookingNo, phone: phoneDigits, expectedRefund: view.cancel.expectedRefund });
-      if (r.ok) { setDone(r.json); setView({ ...view, booking: { ...view.booking, status: "cancelled" }, cancel: { allowed: false, expectedRefund: 0, preview: null } }); return; }
+      const r = await post("/api/bookings/cancel", { bookingNo: view.booking.bookingNo, phone: phoneDigits, expectedRefund: view.cancel.expectedRefund,
+        ...(view.cancel.refundAccountRequired ? { refundAccount: { bank, accountNumber: acctNo, holderName: holder } } : {}) });
+      if (r.ok) { setDone(r.json); setView({ ...view, booking: { ...view.booking, status: "cancelled" }, cancel: { allowed: false, expectedRefund: 0, refundAccountRequired: false, preview: null } }); return; }
       setErr(r.json.error?.message ?? "취소하지 못했습니다");
       if (r.json.error?.code === "REFUND_CHANGED" && r.json.error.detail?.cancel) {   // 금액이 바뀌었으면 새 금액으로 다시 확인받는다
         setView({ ...view, cancel: r.json.error.detail.cancel }); setConfirmed(false);
@@ -116,11 +125,14 @@ export default function LookupClient() {
           {b.options.map((o, i) => <div key={i} className="flex justify-between"><dt>{o.name}{o.useDate ? ` ${o.useDate}` : ""}{o.useTime ? ` ${o.useTime}` : ""}</dt><dd>{won(o.amount)}</dd></div>)}
           <div className="flex justify-between border-t border-line pt-2 font-bold"><dt>총 금액</dt><dd>{won(b.totalAmount)}</dd></div>
         </dl>
-        {view.payment?.receiptUrl && <a href={view.payment.receiptUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm underline">매출전표 보기</a>}
+        {view.payment?.receiptUrl && <a href={view.payment.receiptUrl} target="_blank" rel="noreferrer" className="mr-4 mt-3 inline-block text-sm underline">{view.payment.method === "가상계좌" ? "거래내역서 보기" : "매출전표 보기"}</a>}
+        {view.payment?.cashReceiptUrl && <a href={view.payment.cashReceiptUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm underline">현금영수증 보기</a>}
         {view.refund && !done && (
           <p className="mt-3 text-sm">환불 {won(view.refund.amount)} (공제 {won(view.refund.deductAmount)}) · {REFUND_STATUS[view.refund.status] ?? view.refund.status}</p>
         )}
       </div>
+
+      {view.payment?.virtualAccount && b.status === "pending_payment" && <AccountBox va={view.payment.virtualAccount} amount={view.payment.amount} />}
 
       {c.allowed ? (
         <div className="rounded-lg border border-line bg-white p-5">
@@ -142,13 +154,26 @@ export default function LookupClient() {
               </table>
               <p className="mt-3">환불 예정 금액 <b className="text-lg">{won(c.expectedRefund)}</b></p>
             </>
-          ) : <p className="mt-2 text-sm text-giwa">결제 전 예약으로, 취소해도 환불할 금액이 없습니다.</p>}
+          ) : <p className="mt-2 text-sm text-giwa">{b.status === "pending_payment" ? "입금 전 예약입니다. 취소하면 발급된 가상계좌가 닫히니, 취소 후에는 입금하지 마세요." : "결제 전 예약으로, 취소해도 환불할 금액이 없습니다."}</p>}
+          {c.refundAccountRequired && (
+            <div className="mt-4 rounded border border-line p-3">
+              <p className="text-sm font-medium">환불 받을 계좌</p>
+              <p className="text-xs text-giwa">가상계좌로 결제하셔서 환불받을 계좌가 필요합니다. 영업일 기준 2일 안팎으로 입금되며, 환불이 끝나면 입력하신 계좌 정보는 삭제됩니다.</p>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                <select aria-label="은행" className={inputCls} value={bank} onChange={(e) => setBank(e.target.value)}>
+                  <option value="">은행 선택</option>{BANKS.map((x) => <option key={x.code} value={x.code}>{x.name}</option>)}
+                </select>
+                <input aria-label="계좌번호" className={inputCls} inputMode="numeric" placeholder="계좌번호(숫자만)" value={acctNo} onChange={(e) => setAcctNo(e.target.value.replace(/[^\d-]/g, "").slice(0, 24))} />
+                <input aria-label="예금주" className={inputCls} placeholder="예금주" value={holder} maxLength={30} onChange={(e) => setHolder(e.target.value)} />
+              </div>
+            </div>
+          )}
           <label className="mt-4 flex items-start gap-2 text-sm">
             <input type="checkbox" className="mt-1" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
             <span>{p ? "위 환불 금액을 확인했으며, 예약을 취소합니다." : "예약을 취소합니다."} 취소 후에는 되돌릴 수 없습니다.</span>
           </label>
           {err && <p role="alert" className="mt-3 text-sm text-red-800">{err}</p>}
-          <button onClick={cancel} disabled={!confirmed || busy}
+          <button onClick={cancel} disabled={!confirmed || busy || (c.refundAccountRequired && !acctOk)}
             className="mt-4 w-full rounded bg-red-800 px-4 py-3 text-white hover:bg-red-900 disabled:cursor-not-allowed disabled:opacity-40">
             {busy ? "처리 중…" : "예약 취소하기"}
           </button>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import PayButton from "@/components/reserve/PayButton";
+import PaySection from "@/components/reserve/PaySection";
 
 export const metadata: Metadata = { title: "결제 실패", robots: { index: false } };
 
@@ -23,7 +23,7 @@ export default async function PayFail({ searchParams }: { searchParams: Promise<
         {no ? (
           <>
             <p className="mt-2 text-sm text-giwa">날짜는 확보 시간(약 15분) 동안 유지됩니다. 시간이 남아 있으면 바로 다시 결제할 수 있습니다.</p>
-            <div className="mt-4"><PayButton bookingNo={no} label="다시 결제하기" /></div>
+            <PaySection bookingNo={no} />
           </>
         ) : null}
         <div className="mt-4"><Link href="/reserve" className="underline">예약 화면으로 돌아가기</Link></div>

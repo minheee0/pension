@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import AccountBox from "./AccountBox";
 
 interface Booking { bookingNo: string; checkIn: string; checkOut: string; nights: number; guests: number; totalAmount: number }
+interface Va { bankCode: string; accountNumber: string; holderName: string | null; dueDate: string | null }
 type State =
   | { kind: "loading" }
+  | { kind: "waiting_deposit"; booking: Booking; va: Va; amount: number }
+  | { kind: "unavailable" }
   | { kind: "confirmed"; booking: Booking; receiptUrl: string | null }
   | { kind: "refunded"; refundOk: boolean; reason: string }
   | { kind: "failed"; message: string }
@@ -29,6 +33,8 @@ export default function ConfirmClient(p: { paymentKey: string; orderId: string; 
       .then(async (r) => {
         const j = await r.json();
         if (r.ok && j.kind === "confirmed") setSt({ kind: "confirmed", booking: j.booking, receiptUrl: j.receiptUrl });
+        else if (r.ok && j.kind === "waiting_deposit") setSt({ kind: "waiting_deposit", booking: j.booking, va: j.virtualAccount, amount: j.amount });
+        else if (r.ok && j.kind === "unavailable") setSt({ kind: "unavailable" });
         else if (r.ok && j.kind === "refunded") setSt({ kind: "refunded", refundOk: j.refundOk, reason: j.reason });
         else if (j.kind === "failed") setSt({ kind: "failed", message: j.message });
         else setSt({ kind: "error", message: j.error?.message ?? "결제 확인 중 문제가 발생했습니다" });
@@ -38,6 +44,28 @@ export default function ConfirmClient(p: { paymentKey: string; orderId: string; 
 
   const box = "mt-8 max-w-lg rounded-lg border border-line bg-white p-6";
   if (st.kind === "loading") return <div className={box}><p>결제를 확인하고 있습니다. 창을 닫지 말고 잠시만 기다려 주세요…</p></div>;
+
+  if (st.kind === "waiting_deposit") {
+    return (
+      <div className={box}>
+        <h2 className="font-serif text-2xl font-bold text-wood">가상계좌가 발급되었습니다</h2>
+        <p className="mt-2 text-sm">입금이 확인되면 예약이 확정됩니다. 예약번호 <b className="tracking-wider">{st.booking.bookingNo}</b></p>
+        <div className="mt-4"><AccountBox va={st.va} amount={st.amount} /></div>
+        <p className="mt-4 text-sm text-giwa">입금 정보와 예약 상태는 언제든 예약 조회에서 다시 확인할 수 있습니다.</p>
+        <div className="mt-5 flex gap-3"><Link href="/lookup" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">예약 조회</Link><Link href="/" className="rounded border border-wood px-5 py-2 text-wood">홈으로</Link></div>
+      </div>
+    );
+  }
+
+  if (st.kind === "unavailable") {
+    return (
+      <div className={box}>
+        <h2 className="font-serif text-2xl font-bold">가상계좌를 발급하지 못했습니다</h2>
+        <p className="mt-3">결제하시는 사이 선택하신 날짜를 다른 예약이 가져갔습니다. 발급된 계좌는 자동으로 닫혔으니 <b>입금하지 마세요.</b></p>
+        <div className="mt-5"><Link href="/reserve" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">다른 날짜 보기</Link></div>
+      </div>
+    );
+  }
 
   if (st.kind === "confirmed") {
     const b = st.booking;

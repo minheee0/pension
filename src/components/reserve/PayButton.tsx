@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 
+export type PayMethod = "CARD" | "VIRTUAL_ACCOUNT";
+export type CashReceiptType = "소득공제" | "지출증빙" | "미발행";
+
 /**
- * 결제하기: 서버에서 주문번호·금액을 받아 토스 결제창(SDK v2)을 연다.
+ * 결제하기: 서버에서 주문번호·금액(·가상계좌 입금 기한)을 받아 토스 결제창(SDK v2)을 연다.
  * 금액은 서버가 준 값만 사용한다. 결제 후 successUrl 로 돌아와 서버가 다시 검증·승인한다.
  */
-export default function PayButton({ bookingNo, label = "결제하기" }: { bookingNo: string; label?: string }) {
+export default function PayButton({ bookingNo, label = "결제하기", method = "CARD", cashReceiptType = "소득공제" }: {
+  bookingNo: string; label?: string; method?: PayMethod; cashReceiptType?: CashReceiptType;
+}) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -17,7 +22,7 @@ export default function PayButton({ bookingNo, label = "결제하기" }: { booki
       const r = await fetch("/api/payments/prepare", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ bookingNo }),
+        body: JSON.stringify({ bookingNo, method }),
       });
       const j = await r.json();
       if (!r.ok) { setErr(j.error?.message ?? "결제를 시작하지 못했습니다"); return; }
@@ -25,14 +30,23 @@ export default function PayButton({ bookingNo, label = "결제하기" }: { booki
       const { loadTossPayments, ANONYMOUS } = await import("@tosspayments/tosspayments-sdk");
       const toss = await loadTossPayments(j.clientKey);
       const payment = toss.payment({ customerKey: ANONYMOUS });   // 비회원 결제
-      await payment.requestPayment({
-        method: "CARD",   // 카드·간편결제 통합결제창
-        amount: { currency: "KRW", value: j.amount },
-        orderId: j.orderId,
-        orderName: j.orderName,
+      const common = {
+        amount: { currency: "KRW" as const, value: j.amount as number },
+        orderId: j.orderId as string,
+        orderName: j.orderName as string,
         successUrl: `${window.location.origin}/reserve/pay/success`,
         failUrl: `${window.location.origin}/reserve/pay/fail?no=${encodeURIComponent(bookingNo)}`,
-      });
+      };
+      if (method === "VIRTUAL_ACCOUNT") {
+        await payment.requestPayment({
+          ...common,
+          method: "VIRTUAL_ACCOUNT",
+          // 입금 기한은 서버가 정한 시각(예약 점유 정책과 맞춤). 현금영수증 번호(휴대폰·사업자번호)는 결제창에서 입력받는다.
+          virtualAccount: { cashReceipt: { type: cashReceiptType }, dueDate: j.dueDate },
+        });
+      } else {
+        await payment.requestPayment({ ...common, method: "CARD" });   // 카드·간편결제 통합결제창
+      }
     } catch (e: any) {
       setErr(e?.message ?? "결제창을 열지 못했습니다");
     } finally {

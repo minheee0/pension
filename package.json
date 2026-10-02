@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test:va": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/vaccount-test.ts",
     "test:cancel": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/cancel-test.ts",
     "test:pay": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/payment-test.ts",
     "test:refund": "tsx scripts/refund-test.ts",
