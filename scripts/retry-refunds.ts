@@ -1,4 +1,4 @@
-/** 실패했던 환불을 다시 시도한다.   npx tsx scripts/retry-refunds.ts   (.env.local 의 DB·토스 키 필요) */
+/** 실패했던 환불을 다시 시도한다.   npx tsx --env-file=.env.local scripts/retry-refunds.ts   (DB·토스 키는 .env.local 에서 읽음) */
 import { pool } from "../src/server/db";
 import { retryPendingRefunds } from "../src/server/booking/cancel";
 

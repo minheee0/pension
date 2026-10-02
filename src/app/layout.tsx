@@ -3,6 +3,7 @@ import { Noto_Serif_KR, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ChromeGate from "@/components/ChromeGate";
 import { SITE } from "@/lib/site";
 
 const serif = Noto_Serif_KR({ subsets: ["latin"], weight: ["500", "700"], variable: "--font-serif-kr" });
@@ -17,9 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${serif.variable} ${sans.variable}`}>
       <body className="font-sans antialiased">
-        <SiteHeader />
+        <ChromeGate><SiteHeader /></ChromeGate>
         <main>{children}</main>
-        <SiteFooter />
+        <ChromeGate><SiteFooter /></ChromeGate>
       </body>
     </html>
   );

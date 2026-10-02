@@ -28,14 +28,15 @@ export interface CancelAssessment {
 }
 interface PaidPayment { id: number; amount: number; pg_payment_key: string | null; method: string | null }
 
+export interface AssessOptions { cause?: "guest" | "host"; allowAfterStart?: boolean }
 export function assessCancel(row: Pick<BookingRow, "status" | "check_in" | "discount_amount" | "extra_guest_fee" | "created_at" | "price_snapshot" | "policy_snapshot">,
-  pay: PaidPayment | null, now: Date): CancelAssessment {
+  pay: PaidPayment | null, now: Date, opts: AssessOptions = {}): CancelAssessment {
   const no = (reason: string): CancelAssessment => ({ allowed: false, reason, expectedRefund: 0, refundAccountRequired: false, preview: null });
   if (!["held", "pending_payment", "confirmed"].includes(row.status)) return no("이미 취소되었거나 취소할 수 없는 상태의 예약입니다");
-  if (kstDate(now) > row.check_in) return no("이용이 시작된 예약은 온라인으로 취소할 수 없습니다. 문의해 주세요");
+  if (!opts.allowAfterStart && kstDate(now) > row.check_in) return no("이용이 시작된 예약은 온라인으로 취소할 수 없습니다. 문의해 주세요");
   if (row.status !== "confirmed" || !pay) return { allowed: true, expectedRefund: 0, refundAccountRequired: false, preview: null };   // 결제·입금 전 예약: 환불할 금액 없음
   try {
-    const r = calcRefund(refundInputFromBooking(row as any, { now, cause: "guest", paidAmount: pay.amount }));
+    const r = calcRefund(refundInputFromBooking(row as any, { now, cause: opts.cause ?? "guest", paidAmount: pay.amount }));
     return { allowed: true, expectedRefund: r.refundTotal, refundAccountRequired: pay.method === "가상계좌" && r.refundTotal > 0,
       preview: { daysBefore: r.daysBefore, lines: r.lines, totalAmount: r.totalAmount, deductTotal: r.deductTotal, refundTotal: r.refundTotal } };
   } catch (e) {
@@ -101,6 +102,21 @@ export async function cancelBooking(
   toss: TossClient = createTossClient(),
 ) {
   const row = await verifyBooking(pool, input.bookingNo, input.phone, input.ip);
+  return executeCancel(pool, row, { expectedRefund: input.expectedRefund, refundAccount: input.refundAccount, cause: "guest", by: "guest" }, toss);
+}
+
+export interface ExecuteCancelInput {
+  expectedRefund: number;
+  refundAccount?: RefundAccount;
+  cause: "guest" | "host";            // guest = 환불 규정 적용, host = 사업자 사정(전액 환불)
+  by: "guest" | "admin";
+  allowAfterStart?: boolean;          // 관리자는 이용 시작 이후에도 취소 가능
+}
+
+/** 고객·관리자 공용 취소 실행. (본인 확인/권한 확인은 호출자가 끝낸 상태) */
+export async function executeCancel(pool: Pool, row: BookingRow, input: ExecuteCancelInput, toss: TossClient = createTossClient()) {
+  const reason = input.by === "guest" ? "고객 요청 취소" : input.cause === "host" ? "사업자 사정 취소(전액 환불)" : "관리자 취소(환불 규정 적용)";
+  const opts: AssessOptions = { cause: input.cause, allowAfterStart: input.allowAfterStart };
 
   // 가상계좌 입금 전: 토스에서 계좌부터 닫는다
   if (row.status === "pending_payment") {
@@ -108,10 +124,10 @@ export async function cancelBooking(
       `select id, pg_payment_key from payments where booking_id = $1 and status = 'waiting_deposit' order by id desc limit 1`, [row.id])).rows[0];
     if (wp?.pg_payment_key) {
       try {
-        await toss.cancel(wp.pg_payment_key, { cancelReason: "고객 요청 취소(입금 전)" }, `va-cancel-${wp.id}`);
+        await toss.cancel(wp.pg_payment_key, { cancelReason: `${reason}(입금 전)` }, `va-cancel-${wp.id}`);
       } catch (e) {
         if (!(e instanceof TossApiError)) throw e;
-        throw new PaymentError("UNVERIFIED", "가상계좌를 닫지 못했습니다. 방금 입금하셨다면 잠시 후 예약 조회에서 다시 확인해 주세요", 502);
+        throw new PaymentError("UNVERIFIED", "가상계좌를 닫지 못했습니다. 방금 입금되었다면 잠시 후 예약 상태를 다시 확인해 주세요", 502);
       }
     }
   }
@@ -119,7 +135,7 @@ export async function cancelBooking(
   const tx = await withTx(pool, async (c) => {
     const pay = await paidPayment(c, row.id, true);                                   // ① payments 잠금
     const fresh = (await c.query(`select status from bookings where id = $1`, [row.id])).rows[0].status as string;
-    const assess = assessCancel({ ...row, status: fresh }, pay, new Date());
+    const assess = assessCancel({ ...row, status: fresh }, pay, new Date(), opts);
     if (!assess.allowed) throw new PaymentError("NOT_CANCELLABLE", assess.reason!, 409);
     if (assess.expectedRefund !== input.expectedRefund) {
       throw new PaymentError("REFUND_CHANGED", "시간이 지나 환불 금액이 달라졌습니다. 금액을 다시 확인해 주세요", 409, { cancel: assess });
@@ -127,7 +143,7 @@ export async function cancelBooking(
     if (assess.refundAccountRequired && !input.refundAccount) {
       throw new PaymentError("REFUND_ACCOUNT_REQUIRED", "가상계좌로 결제하셔서 환불받을 계좌 정보가 필요합니다", 400, { cancel: assess });
     }
-    await cancelStay(c, row.id, { by: "guest", reason: "고객 요청 취소" });             // ② stay_dates → bookings
+    await cancelStay(c, row.id, { by: input.by, reason });                           // ② stay_dates → bookings
     await c.query(`update payments set status = 'cancelled' where booking_id = $1 and status = 'waiting_deposit'`, [row.id]);
     let refundId: number | null = null;
     if (pay && assess.preview) {
@@ -135,7 +151,7 @@ export async function cancelBooking(
         `insert into refunds (booking_id, payment_id, amount, deduct_amount, breakdown, reason, status, refund_account_enc)
          values ($1, $2, $3, $4, $5::jsonb, $6, 'requested', $7) returning id`,
         [row.id, pay.id, assess.preview.refundTotal, assess.preview.deductTotal,
-         JSON.stringify({ daysBefore: assess.preview.daysBefore, lines: assess.preview.lines }), "고객 요청 취소",
+         JSON.stringify({ daysBefore: assess.preview.daysBefore, lines: assess.preview.lines }), reason,
          assess.refundAccountRequired && input.refundAccount ? encryptText(JSON.stringify(input.refundAccount)) : null]);
       refundId = ins.rows[0].id;
     }
