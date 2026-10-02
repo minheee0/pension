@@ -186,8 +186,13 @@ export async function reconcileByOrderId(pool: Pool, orderId: string, toss: Toss
     // 사장님이 토스 대시보드에서 직접 취소한 경우 등. 예약·재고는 자동으로 건드리지 않고 알린다.
     await pool.query(`update payments set status = $2 where id = $1`,
       [pay.id, tp.status === "CANCELED" ? "cancelled" : "partial_cancelled"]);
-    console.warn(`[REVIEW] 토스에서 결제가 취소됨 — 예약 ${pay.booking_no} 의 취소/재고 처리를 확인하세요`);
-    return "cancel_recorded" as const;
+    // 우리 시스템이 시작한 환불(refunds 행이 있음)이면 정상 흐름이므로 경고하지 않는다
+    const ours = await pool.query(`select 1 from refunds where payment_id = $1 limit 1`, [pay.id]);
+    if (ours.rowCount === 0) {
+      console.warn(`[REVIEW] 토스에서 결제가 취소됨 — 예약 ${pay.booking_no} 의 취소/재고 처리를 확인하세요`);
+      return "cancel_recorded" as const;
+    }
+    return "synced" as const;
   }
   if (["EXPIRED", "ABORTED"].includes(tp.status) && pay.status === "ready") {
     await pool.query(`update payments set status = $2 where id = $1`, [pay.id, tp.status === "EXPIRED" ? "expired" : "failed"]);

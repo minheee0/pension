@@ -34,7 +34,7 @@ export function apiError(e: unknown) {
   if (e instanceof StayError) {
     return jsonError(e.code, e.message, STATUS[e.code], e.detail ? { detail: e.detail } : undefined);
   }
-  if (e instanceof PaymentError) return jsonError(e.code, e.message, e.status);
+  if (e instanceof PaymentError) return jsonError(e.code, e.message, e.status, e.detail ? { detail: e.detail } : undefined);
   console.error("[api] unexpected error", e);
   return jsonError("INTERNAL", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.", 500);
 }

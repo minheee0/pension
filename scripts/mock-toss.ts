@@ -59,9 +59,15 @@ export async function startMockToss(secretKey = "test_sk_mock") {
         if (state.cancelFails) return send(500, { code: "FAILED_INTERNAL_SYSTEM_PROCESSING", message: "취소 실패" });
         const s = sessions.get(key);
         if (!s) return send(404, { code: "NOT_FOUND_PAYMENT", message: "존재하지 않는 결제 입니다." });
-        s.status = "CANCELED";
-        s.cancels.push({ cancelAmount: s.amount, cancelReason: body.cancelReason, transactionKey: `tx_${randomBytes(4).toString("hex")}` });
-        return send(200, payment(s));
+        if (idemKey && idem.has(idemKey)) return send(idem.get(idemKey)!.status, idem.get(idemKey)!.body);
+        const already = s.cancels.reduce((t, c) => t + c.cancelAmount, 0);
+        const amt = body.cancelAmount ?? s.amount - already;       // cancelAmount 가 없으면 남은 금액 전부
+        if (amt <= 0 || already + amt > s.amount) return send(400, { code: "INVALID_CANCEL_AMOUNT", message: "취소 금액이 올바르지 않습니다." });
+        s.cancels.push({ cancelAmount: amt, cancelReason: body.cancelReason, transactionKey: `tx_${randomBytes(4).toString("hex")}` });
+        s.status = already + amt >= s.amount ? "CANCELED" : "PARTIAL_CANCELED";
+        const out = payment(s);
+        if (idemKey) idem.set(idemKey, { status: 200, body: out });
+        return send(200, out);
       }
       m = url.match(/^\/v1\/payments\/([^/]+)$/);
       if (req.method === "GET" && m) {

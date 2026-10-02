@@ -52,7 +52,7 @@ export default function ConfirmClient(p: { paymentKey: string; orderId: string; 
         </dl>
         <p className="mt-4 text-sm text-giwa">예약번호와 예약 시 입력한 휴대폰 번호는 조회·취소에 필요하니 꼭 보관해 주세요.</p>
         {st.receiptUrl && <a href={st.receiptUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block underline">매출전표 보기</a>}
-        <div className="mt-5"><Link href="/" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">홈으로</Link></div>
+        <div className="mt-5 flex gap-3"><Link href="/lookup" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">예약 조회</Link><Link href="/" className="rounded border border-wood px-5 py-2 text-wood">홈으로</Link></div>
       </div>
     );
   }
