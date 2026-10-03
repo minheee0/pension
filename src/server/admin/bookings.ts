@@ -8,7 +8,7 @@ import { AdminError } from "./errors";
 const STATUSES = ["held", "pending_payment", "confirmed", "completed", "cancelled", "expired", "no_show"] as const;
 const PAGE = 30;
 
-export async function listBookings(pool: Pool, f: { q?: string; status?: string; from?: string; to?: string; page?: number }) {
+export async function listBookings(pool: Pool, f: { q?: string; status?: string; from?: string; to?: string; outFrom?: string; outTo?: string; page?: number }) {
   const where: string[] = [], args: unknown[] = [];
   const add = (sql: string, v: unknown) => { args.push(v); where.push(sql.replace("?", `$${args.length}`)); };
   const q = (f.q ?? "").trim();
@@ -17,9 +17,12 @@ export async function listBookings(pool: Pool, f: { q?: string; status?: string;
     else if (/^\d{4}$/.test(q)) add("b.guest_phone_last4 = ?", q);
     else add("b.guest_name ilike ?", `%${q.replace(/[%_\\]/g, "\\$&")}%`);
   }
-  if (f.status && (STATUSES as readonly string[]).includes(f.status)) add("b.status = ?", f.status);
+  const statuses = (f.status ?? "").split(",").map((x) => x.trim()).filter((x) => (STATUSES as readonly string[]).includes(x));   // "confirmed,completed" 처럼 여러 개 가능
+  if (statuses.length) add("b.status = any(?::text[])", statuses);
   if (f.from && /^\d{4}-\d{2}-\d{2}$/.test(f.from)) add("b.check_in >= ?::date", f.from);
   if (f.to && /^\d{4}-\d{2}-\d{2}$/.test(f.to)) add("b.check_in <= ?::date", f.to);
+  if (f.outFrom && /^\d{4}-\d{2}-\d{2}$/.test(f.outFrom)) add("b.check_out >= ?::date", f.outFrom);
+  if (f.outTo && /^\d{4}-\d{2}-\d{2}$/.test(f.outTo)) add("b.check_out <= ?::date", f.outTo);
   const w = where.length ? `where ${where.join(" and ")}` : "";
   const page = Math.max(0, f.page ?? 0);
   const total = (await pool.query(`select count(*)::int as n from bookings b ${w}`, args)).rows[0].n as number;

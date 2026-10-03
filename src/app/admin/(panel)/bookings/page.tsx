@@ -11,17 +11,21 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
   await requireAdminPage();
   const sp = await searchParams;
   const page = Math.max(0, Number(sp.page ?? 0) || 0);
-  const res = await listBookings(pool, { q: sp.q, status: sp.status, from: sp.from, to: sp.to, page });
+  const res = await listBookings(pool, { q: sp.q, status: sp.status, from: sp.from, to: sp.to, outFrom: sp.outFrom, outTo: sp.outTo, page });
   const qs = (p: number) => new URLSearchParams({ ...Object.fromEntries(Object.entries(sp).filter(([, v]) => v) as [string, string][]), page: String(p) }).toString();
   const pages = Math.ceil(res.total / res.pageSize);
 
   return (
     <div className="space-y-4">
       <h1 className="font-serif text-2xl font-bold text-wood">예약</h1>
+      {(sp.outFrom || sp.outTo) && (
+        <p className="rounded border border-line bg-white p-2 text-sm">체크아웃 {sp.outFrom ?? ""}{sp.outTo && sp.outTo !== sp.outFrom ? ` ~ ${sp.outTo}` : ""} 예약만 표시 중 · <Link className="underline" href="/admin/bookings">필터 해제</Link></p>
+      )}
       <form className="grid gap-2 rounded border border-line bg-white p-3 md:grid-cols-[2fr_1fr_1fr_1fr_auto]">
+        {sp.outFrom && <input type="hidden" name="outFrom" value={sp.outFrom} />}{sp.outTo && <input type="hidden" name="outTo" value={sp.outTo} />}
         <label>검색<input name="q" defaultValue={sp.q} placeholder="예약번호, 이름, 전화번호 끝 4자리" className={inputCls} /></label>
         <label>상태<select name="status" defaultValue={sp.status ?? ""} className={inputCls}>
-          <option value="">전체</option>{["confirmed", "pending_payment", "held", "completed", "cancelled", "expired", "no_show"].map((s) => <option key={s} value={s}>{({ confirmed: "예약 확정", pending_payment: "입금 대기", held: "결제 대기", completed: "이용 완료", cancelled: "취소", expired: "만료", no_show: "노쇼" } as any)[s]}</option>)}
+          <option value="">전체</option><option value="confirmed,completed">예약 확정·이용 완료</option>{["confirmed", "pending_payment", "held", "completed", "cancelled", "expired", "no_show"].map((s) => <option key={s} value={s}>{({ confirmed: "예약 확정", pending_payment: "입금 대기", held: "결제 대기", completed: "이용 완료", cancelled: "취소", expired: "만료", no_show: "노쇼" } as any)[s]}</option>)}
         </select></label>
         <label>체크인 시작<input type="date" name="from" defaultValue={sp.from} className={inputCls} /></label>
         <label>체크인 끝<input type="date" name="to" defaultValue={sp.to} className={inputCls} /></label>
