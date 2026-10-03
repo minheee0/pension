@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { pool } from "@/server/db";
 import { getDashboard } from "@/server/admin/dashboard";
+import { syncWaitingDeposits } from "@/server/admin/sync";
 import { requireAdminPage } from "@/server/admin/session";
 import { Badge, td, th, won } from "@/components/admin/ui";
 
 export default async function Dashboard() {
-  await requireAdminPage();
+  const admin = await requireAdminPage();
+  await syncWaitingDeposits(pool, admin);   // 입금 대기 건이 있으면 토스에 확인해 입금을 반영
   const d = await getDashboard(pool);
   const Card = ({ label, value, warn }: { label: string; value: string | number; warn?: boolean }) => (
     <div className={`rounded border p-4 ${warn ? "border-red-800/40 bg-red-50" : "border-line bg-white"}`}>
@@ -24,11 +26,13 @@ export default async function Dashboard() {
     <div className="space-y-8">
       <div><h1 className="font-serif text-2xl font-bold text-wood">대시보드</h1><p className="text-giwa">{d.today} 기준 (한국시간)</p></div>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <Card label="오늘 체크인" value={d.checkInsToday.length} />
         <Card label="오늘 체크아웃" value={d.checkOutsToday.length} />
         <Card label="입금 대기" value={d.pendingDeposits.length} />
         <Card label="환불 처리 필요" value={d.refundIssues.length} warn={d.refundIssues.length > 0} />
+        <Card label="신고된 후기" value={d.reviewsReported} warn={d.reviewsReported > 0} />
+        <Card label="답글 안 단 후기" value={d.reviewsNeedReply} />
       </section>
 
       {d.refundIssues.length > 0 && (

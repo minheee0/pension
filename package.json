@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test:sync": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/admin-sync-test.ts",
+    "test:review": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/review-test.ts",
+    "bookings:complete": "tsx --env-file=.env.local scripts/complete-bookings.ts",
     "test:admin": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/admin-test.ts",
     "admin:create": "tsx --env-file=.env.local scripts/create-admin.ts",
     "refunds:retry": "tsx --env-file=.env.local scripts/retry-refunds.ts",

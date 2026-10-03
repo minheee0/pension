@@ -411,6 +411,20 @@ create table review_replies (
   created_at timestamptz not null default now()
 );
 
+-- 후기 신고 (손님이 공개 목록에서 신고. 자동으로 숨기지 않고 관리자가 검토)
+create table review_reports (
+  id         bigint generated always as identity primary key,
+  review_id  bigint not null references reviews(id) on delete cascade,
+  reason     text not null check (reason in ('abuse', 'false', 'privacy', 'spam', 'other')),
+  detail     text check (char_length(detail) <= 300),
+  ip         inet,
+  created_at timestamptz not null default now()
+);
+-- 같은 IP 가 같은 후기를 반복 신고해 신고 수를 부풀리는 것을 막는다
+create unique index uq_review_reports_ip on review_reports (review_id, ip) where ip is not null;
+create index idx_review_reports_review on review_reports (review_id);
+create index idx_reviews_status_created on reviews (status, created_at desc);
+
 -- DB 차원의 백스톱: 이용 완료된 예약만 후기 작성 가능
 create or replace function reviews_require_completed() returns trigger
 language plpgsql as $$

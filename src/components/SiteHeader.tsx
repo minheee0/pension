@@ -5,6 +5,7 @@ const NAV = [
   { href: "/about", label: "소개" },
   { href: "/stay", label: "독채 안내" },
   { href: "/guide", label: "이용안내" },
+  { href: "/reviews", label: "후기" },
   { href: "/lookup", label: "예약 조회" },
 ];
 

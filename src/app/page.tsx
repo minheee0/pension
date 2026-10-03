@@ -1,6 +1,9 @@
 import Link from "next/link";
 import Photo from "@/components/Photo";
+import HomeReviews from "@/components/reviews/HomeReviews";
 import { SITE } from "@/lib/site";
+
+export const dynamic = "force-dynamic";   // 후기를 DB에서 읽어 오므로 매 요청마다 만든다
 
 const inputCls = "mt-1 block w-full rounded border border-line bg-white px-3 py-2 text-base";
 
@@ -61,10 +64,7 @@ export default function Home() {
         </dl>
       </section>
 
-      <section className="mx-auto mt-20 max-w-5xl px-5">
-        <h2 className="font-serif text-3xl font-bold text-wood">머문 분들의 이야기</h2>
-        <p className="mt-3 text-giwa">이용을 마친 분들이 남긴 후기가 이곳에 표시됩니다. (오픈 후 노출)</p>
-      </section>
+      <HomeReviews />
 
       <section className="mx-auto mt-20 max-w-5xl px-5">
         <h2 className="font-serif text-3xl font-bold text-wood">오시는 길</h2>

@@ -54,6 +54,7 @@ export const SETTING_DEFS: Record<string, { label: string; hint: string; validat
   virtual_account_due_minutes: { label: "가상계좌 입금 기한(분)", hint: "발급 후 입금 가능 시간 (최대 3일)", validate: int(30, 4320, "입금 기한") },
   booking_open_days: { label: "예약 오픈 기간(일)", hint: "오늘부터 며칠 뒤까지 예약 받을지", validate: int(30, 730, "예약 오픈 기간") },
   weekend_days: { label: "주말로 보는 요일", hint: "그날 '밤' 기준. 예: FRI,SAT", validate: (v) => { const d = v.split(",").map((x) => x.trim().toUpperCase()); if (!d.length || d.some((x) => !["MON","TUE","WED","THU","FRI","SAT","SUN"].includes(x))) throw bad("요일은 FRI,SAT 처럼 MON~SUN 을 쉼표로 구분해 주세요"); } },
+  member_review_days: { label: "후기 작성 가능 기간(일)", hint: "체크아웃 후 며칠까지 후기를 쓸 수 있는지", validate: int(1, 365, "후기 작성 기간") },
   check_in_time: { label: "체크인 시각", hint: "HH:MM (안내 문구용)", validate: (v) => { if (!HHMM.test(v)) throw bad("체크인 시각 형식은 HH:MM 입니다"); } },
   check_out_time: { label: "체크아웃 시각", hint: "HH:MM (안내 문구용)", validate: (v) => { if (!HHMM.test(v)) throw bad("체크아웃 시각 형식은 HH:MM 입니다"); } },
   no_show_deadline_time: { label: "노쇼 판정 시각", hint: "체크인 당일 이 시각까지 연락 없으면 노쇼 (안내 문구용)", validate: (v) => { if (!HHMM.test(v)) throw bad("노쇼 판정 시각 형식은 HH:MM 입니다"); } },

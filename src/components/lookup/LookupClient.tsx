@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AccountBox from "@/components/reserve/AccountBox";
+import ReviewBox from "@/components/reviews/ReviewBox";
 import { BANKS } from "@/lib/banks";
 import { formatPhone, PHONE_OK, sanitizePhone } from "@/lib/phone";
 import { SITE } from "@/lib/site";
@@ -181,6 +182,8 @@ export default function LookupClient() {
       ) : (
         !done && <p className="rounded-lg border border-line bg-white p-5 text-sm text-giwa">{c.reason}</p>
       )}
+
+      {(b.status === "confirmed" || b.status === "completed") && <ReviewBox bookingNo={b.bookingNo} phone={phoneDigits} />}
 
       <p className="text-sm text-giwa">날짜 변경 등 다른 요청은 {SITE.phone}로 문의해 주세요.</p>
       <button onClick={() => { setView(null); setDone(null); setErr(null); }} className="text-sm underline">다른 예약 조회하기</button>

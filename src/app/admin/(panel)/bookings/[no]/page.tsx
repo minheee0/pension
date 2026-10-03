@@ -5,6 +5,7 @@ import { pool } from "@/server/db";
 import { getBookingDetail } from "@/server/admin/bookings";
 import { AdminError } from "@/server/admin/errors";
 import { requireAdminPage } from "@/server/admin/session";
+import { syncWaitingDeposits } from "@/server/admin/sync";
 import CancelPanel from "@/components/admin/CancelPanel";
 import { formatPhone } from "@/lib/phone";
 import { Badge, PAY_KO, REFUND_KO, td, th, won } from "@/components/admin/ui";
@@ -14,6 +15,7 @@ export const metadata: Metadata = { title: "예약 상세" };
 export default async function BookingDetail({ params }: { params: Promise<{ no: string }> }) {
   const admin = await requireAdminPage();
   const { no } = await params;
+  await syncWaitingDeposits(pool, admin, { bookingNo: no });   // 입금 대기 중이면 토스에 확인해 최신 상태로 보여 준다
   let d;
   try { d = await getBookingDetail(pool, admin, no); } catch (e) { if (e instanceof AdminError && e.status === 404) notFound(); throw e; }
   const b = d.booking;
