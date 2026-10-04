@@ -46,7 +46,8 @@ insert into policy_settings (key, value, description) values
   ('no_show_deadline_time',       '22:00',    '체크인 당일 이 시각까지 연락 없으면 노쇼(당일 취소) 처리'),
   ('free_change_days_off',        '7',        '비수기 무료 날짜 변경 가능 기한(체크인 N일 전)'),
   ('free_change_days_peak',       '14',       '성수기 무료 날짜 변경 가능 기한(체크인 N일 전)'),
-  ('member_review_days',          '30',       '체크아웃 후 후기 작성 가능 일수');
+  ('member_review_days',          '30',       '체크아웃 후 후기 작성 가능 일수'),
+  ('checkin_guide',               '',         '체크인 전날 안내 문자에 덧붙는 출입 방법·주차 안내');
 
 -- 기본 요금 (평일/주말). 값은 가정치 → 관리자에서 수정
 create table base_prices (
@@ -481,6 +482,34 @@ create table audit_logs (
   created_at  timestamptz not null default now()
 );
 create index idx_audit_logs_created on audit_logs (created_at desc);
+
+-- 알림 발송 대기열: 이벤트가 생기면 먼저 여기에 기록하고, 별도 작업이 발송·재시도한다 (알림 실패가 결제를 막지 않게)
+create table notifications (
+  id            bigint generated always as identity primary key,
+  kind          text not null,                                   -- booking_confirmed, checkin_reminder ...
+  audience      text not null check (audience in ('guest', 'owner')),
+  channel       text not null check (channel in ('sms', 'email')),
+  booking_id    uuid references bookings(id) on delete set null,
+  recipient_enc text,                                            -- 손님 연락처(암호화). 사장님 알림은 환경변수 연락처를 쓰므로 null
+  subject       text,
+  body          text not null,
+  dedupe_key    text not null unique,                            -- 같은 알림이 두 번 만들어지지 않게 한다
+  status        text not null default 'pending' check (status in ('pending', 'sent', 'failed', 'skipped')),
+  attempts      integer not null default 0,
+  last_error    text,
+  scheduled_at  timestamptz not null default now(),
+  sent_at       timestamptz,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+create index idx_notifications_due on notifications (status, scheduled_at);
+create index idx_notifications_booking on notifications (booking_id);
+
+do $$ begin
+  if not exists (select 1 from pg_trigger where tgname = 'trg_notifications_updated') then
+    create trigger trg_notifications_updated before update on notifications for each row execute function set_updated_at();
+  end if;
+end $$;
 
 -- 비회원 예약 조회 무차별 대입 방지용 (IP·예약번호별 최근 시도 횟수로 제한)
 create table lookup_attempts (

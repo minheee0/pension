@@ -13,6 +13,7 @@ import type { Pool } from "pg";
 import { cancelStay, withTx, type Db } from "@/server/booking/hold";
 import { verifyBooking, type BookingRow } from "@/server/booking/lookup";
 import { decryptText, encryptText } from "@/server/crypto";
+import { notify } from "@/server/notify/enqueue";
 import { PaymentError } from "@/server/payments/errors";
 import { reconcileByOrderId } from "@/server/payments/service";
 import { createTossClient, TossApiError, type TossClient } from "@/server/payments/toss";
@@ -160,6 +161,10 @@ export async function executeCancel(pool: Pool, row: BookingRow, input: ExecuteC
 
   let refundDone: boolean | null = null;
   if (tx.refundId) refundDone = await processRefund(pool, tx.refundId, toss);
+  await notify(pool, {
+    type: "booking_cancelled", bookingId: row.id, notifyOwner: input.by === "guest",    // 손님이 직접 취소하면 사장님께도 알린다
+    refund: tx.assess.preview ? { amount: tx.assess.preview.refundTotal, deduct: tx.assess.preview.deductTotal, done: refundDone, byHost: input.cause === "host" } : null,
+  });
   return {
     status: "cancelled" as const,
     refund: tx.assess.preview && {
@@ -199,6 +204,7 @@ export async function processRefund(pool: Pool, refundId: number, toss: TossClie
     return true;
   } catch (e) {
     await pool.query(`update refunds set status = 'manual_needed' where id = $1`, [r.id]);
+    await notify(pool, { type: "owner_refund_failed", refundId: r.id });      // 같은 환불은 한 번만 경고(재시도해도 중복 알림 없음)
     console.error(`[ALERT] 환불 실패 — 재시도 필요 refund=${r.id} payment=${r.payment_id}`, e);
     return false;
   }

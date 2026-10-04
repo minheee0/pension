@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const NAV = [
   ["/admin", "대시보드"], ["/admin/bookings", "예약"], ["/admin/reviews", "후기"], ["/admin/calendar", "달력·차단"], ["/admin/sales", "매출"], ["/admin/pricing", "요금·옵션"],
-  ["/admin/policy", "환불 규정·설정"], ["/admin/refunds", "환불 현황"], ["/admin/audit", "작업 기록"],
+  ["/admin/policy", "환불 규정·설정"], ["/admin/refunds", "환불 현황"], ["/admin/notifications", "알림"], ["/admin/audit", "작업 기록"],
 ];
 
 export default async function PanelLayout({ children }: { children: React.ReactNode }) {

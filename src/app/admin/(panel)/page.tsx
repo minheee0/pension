@@ -29,12 +29,13 @@ export default async function Dashboard() {
     <div className="space-y-8">
       <div><h1 className="font-serif text-2xl font-bold text-wood">대시보드</h1><p className="text-giwa">{d.today} 기준 (한국시간)</p></div>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-7">
         <Card label="오늘 체크인" value={d.checkInsToday.length} href={`/admin/bookings?${tr}&status=confirmed`} />
         <Card label="오늘 체크아웃" value={d.checkOutsToday.length} href={`/admin/bookings?outFrom=${d.today}&outTo=${d.today}&status=confirmed,completed`} />
         <Card label="입금 대기" value={d.pendingDeposits.length} href="/admin/bookings?status=pending_payment" />
         <Card label="환불 처리 필요" value={d.refundIssues.length} warn={d.refundIssues.length > 0} href="/admin/refunds" />
         <Card label="신고된 후기" value={d.reviewsReported} warn={d.reviewsReported > 0} href="/admin/reviews?f=reported" />
+        <Card label="알림 발송 실패" value={d.notificationsFailed} warn={d.notificationsFailed > 0} href="/admin/notifications?status=failed" />
         <Card label="답글 안 단 후기" value={d.reviewsNeedReply} href="/admin/reviews?f=needs_reply" />
       </section>
 

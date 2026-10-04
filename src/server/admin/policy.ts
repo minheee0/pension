@@ -54,6 +54,7 @@ export const SETTING_DEFS: Record<string, { label: string; hint: string; validat
   virtual_account_due_minutes: { label: "가상계좌 입금 기한(분)", hint: "발급 후 입금 가능 시간 (최대 3일)", validate: int(30, 4320, "입금 기한") },
   booking_open_days: { label: "예약 오픈 기간(일)", hint: "오늘부터 며칠 뒤까지 예약 받을지", validate: int(30, 730, "예약 오픈 기간") },
   weekend_days: { label: "주말로 보는 요일", hint: "그날 '밤' 기준. 예: FRI,SAT", validate: (v) => { const d = v.split(",").map((x) => x.trim().toUpperCase()); if (!d.length || d.some((x) => !["MON","TUE","WED","THU","FRI","SAT","SUN"].includes(x))) throw bad("요일은 FRI,SAT 처럼 MON~SUN 을 쉼표로 구분해 주세요"); } },
+  checkin_guide: { label: "체크인 안내문 (전날 문자에 덧붙임)", hint: "출입 방법·주차·대문 비밀번호 안내 등. 300자 이내", validate: (v) => { if (v.length > 300) throw bad("체크인 안내문은 300자 이내로 적어 주세요"); } },
   member_review_days: { label: "후기 작성 가능 기간(일)", hint: "체크아웃 후 며칠까지 후기를 쓸 수 있는지", validate: int(1, 365, "후기 작성 기간") },
   check_in_time: { label: "체크인 시각", hint: "HH:MM (안내 문구용)", validate: (v) => { if (!HHMM.test(v)) throw bad("체크인 시각 형식은 HH:MM 입니다"); } },
   check_out_time: { label: "체크아웃 시각", hint: "HH:MM (안내 문구용)", validate: (v) => { if (!HHMM.test(v)) throw bad("체크아웃 시각 형식은 HH:MM 입니다"); } },
@@ -80,7 +81,7 @@ export async function saveSettings(pool: Pool, admin: AdminCtx, values: Record<s
   if (Number(merged("max_guests")) < Number(merged("base_guests"))) throw bad("최대 인원은 기준 인원보다 작을 수 없습니다");
   const changed = Object.entries(next).filter(([k, v]) => cur.get(k) !== v);
   if (!changed.length) return { changed: 0 };
-  await withTx(pool, async (c) => { for (const [k, v] of changed) await c.query(`update policy_settings set value = $2 where key = $1`, [k, v]); });
+  await withTx(pool, async (c) => { for (const [k, v] of changed) await c.query(`insert into policy_settings (key, value) values ($1, $2) on conflict (key) do update set value = $2`, [k, v]); });
   await audit(pool, admin, "policy.settings", {}, Object.fromEntries(changed.map(([k]) => [k, cur.get(k)])), Object.fromEntries(changed));
   return { changed: changed.length };
 }

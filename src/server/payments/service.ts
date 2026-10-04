@@ -14,6 +14,7 @@ import type { Pool } from "pg";
 import { cancelStay, confirmStay, extendHoldForVirtualAccount, StayError, withTx, type Db } from "@/server/booking/hold";
 import { encryptText } from "@/server/crypto";
 import { SITE } from "@/lib/site";
+import { notify } from "@/server/notify/enqueue";
 import { PaymentError } from "./errors";
 import { createTossClient, TossApiError, type TossClient, type TossPayment } from "./toss";
 
@@ -173,6 +174,7 @@ async function settleWaiting(pool: Pool, pay: PayRow, tp: TossPayment, toss: Tos
     await cancelUnpaidAccount(pool, pay, tp.paymentKey, "선택하신 날짜를 확보하지 못해 가상계좌를 자동 취소", toss);
     return { kind: "unavailable", booking: await bookingSummary(pool, pay.booking_id) };
   }
+  await notify(pool, { type: "deposit_waiting", bookingId: pay.booking_id });   // 입금 안내(계좌·금액·기한)를 문자로도 보낸다
   return { kind: "waiting_deposit", booking: await bookingSummary(pool, pay.booking_id), virtualAccount: toVaInfo(stored), amount: pay.amount };
 }
 
@@ -192,6 +194,7 @@ export async function cancelUnpaidAccount(pool: Pool, pay: Pick<PayRow, "id">, p
 async function settlePaid(pool: Pool, pay: PayRow, tp: TossPayment, toss: TossClient): Promise<ConfirmOutcome> {
   if (tp.totalAmount !== pay.amount) {
     const ok = await refundFull(pool, pay, tp.paymentKey, "결제 금액 불일치로 자동 환불", toss);
+    await notify(pool, { type: "auto_refunded", bookingId: pay.booking_id, refund: { amount: pay.amount, deduct: 0, done: ok } });
     return { kind: "refunded", reason: "AMOUNT_MISMATCH", refundOk: ok, booking: await bookingSummary(pool, pay.booking_id) };
   }
   const r = await withTx(pool, async (c) => {
@@ -208,11 +211,13 @@ async function settlePaid(pool: Pool, pay: PayRow, tp: TossPayment, toss: TossCl
     return cs.ok ? { ok: true as const, already: false } : { ok: false as const, reason: cs.reason === "CANCELLED" ? "CANCELLED" as const : "HOLD_LOST" as const };
   });
   if (r.ok) {
+    if (!r.already) await notify(pool, { type: "booking_confirmed", bookingId: pay.booking_id });   // 손님 확정 안내 + 사장님 새 예약 알림
     return { kind: "confirmed", booking: await bookingSummary(pool, pay.booking_id), receiptUrl: tp.receiptUrl ?? tp.cashReceipt?.receiptUrl ?? null, already: r.already };
   }
   const reason = r.reason === "CANCELLED" ? "CANCELLED" : "HOLD_LOST";
   const ok = await refundFull(pool, pay, tp.paymentKey,
     reason === "CANCELLED" ? "예약이 취소되어 자동 환불" : "선택하신 날짜가 이미 다른 예약으로 확정되어 자동 환불", toss);
+  await notify(pool, { type: "auto_refunded", bookingId: pay.booking_id, refund: { amount: pay.amount, deduct: 0, done: ok } });
   return { kind: "refunded", reason, refundOk: ok, booking: await bookingSummary(pool, pay.booking_id) };
 }
 
@@ -242,6 +247,7 @@ async function refundFull(pool: Pool, pay: PayRow, paymentKey: string, reason: s
     return true;
   } catch (e) {
     await pool.query(`update refunds set status = 'manual_needed' where id = $1`, [refundId]);
+    await notify(pool, { type: "owner_refund_failed", refundId });
     console.error(`[ALERT] 자동 환불 실패 — 토스 대시보드에서 직접 취소 필요(가상계좌는 환불 계좌 확인 필요). payment=${pay.id} paymentKey=${paymentKey}`, e);
     return false;
   }
@@ -264,7 +270,7 @@ export async function reconcileByOrderId(pool: Pool, orderId: string, toss: Toss
     return "noop" as const;
   }
   if ((tp.status === "CANCELED" || tp.status === "EXPIRED") && pay.status === "waiting_deposit") {
-    await closeWaiting(pool, pay, tp.status);    // 입금 전에 계좌가 닫힘(기한 만료·취소)
+    if (await closeWaiting(pool, pay, tp.status)) await notify(pool, { type: "deposit_expired", bookingId: pay.booking_id });   // 입금 전에 계좌가 닫힘(기한 만료·취소)
     return "closed" as const;
   }
   if ((tp.status === "CANCELED" || tp.status === "PARTIAL_CANCELED") && pay.status === "paid") {
@@ -290,17 +296,20 @@ export async function reconcileByOrderId(pool: Pool, orderId: string, toss: Toss
 }
 
 /** 입금 전 가상계좌가 만료·취소됨: 결제를 닫고 예약을 취소해 날짜를 풀어 준다 */
-async function closeWaiting(pool: Pool, pay: PayRow, tossStatus: string) {
+async function closeWaiting(pool: Pool, pay: PayRow, tossStatus: string): Promise<boolean> {
+  let closed = false;
   await withTx(pool, async (c) => {
     const { rows } = await c.query(`select status from payments where id = $1 for update`, [pay.id]);
     if (rows[0].status !== "waiting_deposit") return;
     await c.query(`update payments set status = $2 where id = $1`, [pay.id, tossStatus === "EXPIRED" ? "expired" : "cancelled"]);
     try {
       await cancelStay(c, pay.booking_id, { by: "system", reason: "가상계좌 입금 기한 만료" });
+      closed = true;
     } catch (e) {
       if (!(e instanceof StayError)) throw e;   // 이미 취소·확정된 예약이면 그대로 둔다
     }
   });
+  return closed;
 }
 
 /**
