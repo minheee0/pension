@@ -17,9 +17,9 @@ export function configStatus(env = process.env) {
   const email = !!(env.SMTP_URL && env.MAIL_FROM) || !prod;
   return [
     { key: "sms", label: "문자 발송", ok: sms, detail: env.SMS_PROVIDER === "solapi" ? "솔라피" : prod ? "SMS_PROVIDER=solapi 와 SOLAPI_API_KEY·SOLAPI_API_SECRET·SMS_FROM 필요" : "개발용(터미널 출력)" },
-    { key: "email", label: "이메일 발송", ok: email, detail: env.SMTP_URL ? "SMTP" : prod ? "SMTP_URL·MAIL_FROM 필요" : "개발용(터미널 출력)" },
+    { key: "email", label: "이메일 발송 (선택)", ok: email || (prod && !env.OWNER_EMAIL), detail: env.SMTP_URL ? "SMTP" : !prod ? "개발용(터미널 출력)" : env.OWNER_EMAIL ? "OWNER_EMAIL 을 설정했으니 SMTP_URL·MAIL_FROM 도 필요합니다" : "사용 안 함 — 문자만 발송합니다" },
     { key: "owner_phone", label: "사장님 문자 번호", ok: !!env.OWNER_PHONE, detail: env.OWNER_PHONE ? maskRecipient(env.OWNER_PHONE) : "OWNER_PHONE 필요" },
-    { key: "owner_email", label: "사장님 이메일", ok: !!env.OWNER_EMAIL, detail: env.OWNER_EMAIL ? maskRecipient(env.OWNER_EMAIL) : "OWNER_EMAIL 필요" },
+    { key: "owner_email", label: "사장님 이메일 (선택)", ok: true, detail: env.OWNER_EMAIL ? maskRecipient(env.OWNER_EMAIL) : "설정 안 함 — 사장님 알림은 문자로만 받습니다" },
     { key: "cron", label: "정기 작업(재시도·안내 발송)", ok: !!env.CRON_SECRET, detail: env.CRON_SECRET ? "CRON_SECRET 설정됨 — 스케줄러가 /api/cron/run 을 호출해야 합니다" : "CRON_SECRET 필요" },
     { key: "site_url", label: "사이트 주소(문자 속 링크)", ok: !!env.SITE_URL, detail: env.SITE_URL ?? "SITE_URL 필요 (예: https://manbok.kr)" },
   ];

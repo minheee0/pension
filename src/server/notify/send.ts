@@ -35,6 +35,11 @@ export async function sendDue(pool: Pool, opts: { limit?: number; providers?: Pr
     const to = n.audience === "owner" ? (n.channel === "sms" ? process.env.OWNER_PHONE : process.env.OWNER_EMAIL) : n.recipient_enc ? decryptText(n.recipient_enc) : null;
     if (!to) { await fail(n.id, n.attempts, `수신 연락처가 없습니다 (${n.audience === "owner" ? (n.channel === "sms" ? "OWNER_PHONE" : "OWNER_EMAIL") + " 환경변수" : "손님 연락처"})`, false); continue; }
     const provider = n.channel === "sms" ? providers.sms : providers.email;
+    if (!provider && n.channel === "email" && n.audience === "guest") {
+      // 이메일은 선택 사항: SMTP 를 설정하지 않았다면 손님 이메일은 실패가 아니라 '건너뜀'으로 둔다(문자는 정상 발송)
+      await pool.query(`update notifications set status = 'skipped', last_error = '이메일 발송을 사용하지 않음 (SMTP_URL 미설정)' where id = $1`, [n.id]);
+      continue;
+    }
     if (!provider) { await fail(n.id, n.attempts, `${n.channel === "sms" ? "문자" : "이메일"} 발송 설정이 없습니다 (${n.channel === "sms" ? "SMS_PROVIDER·SOLAPI_*·SMS_FROM" : "SMTP_URL·MAIL_FROM"})`, false); continue; }
     try {
       if (n.channel === "sms") await (provider as any).send({ to, text: n.body, subject: n.subject ?? undefined });

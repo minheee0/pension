@@ -278,6 +278,20 @@ async function main() {
   const noCfg = await (async () => { await pool.query("truncate notifications restart identity"); await notify(pool, { type: "booking_cancelled", bookingId: N.bookingId, notifyOwner: false, refund: null }); await sendDue(pool, { providers: { sms: null, email: null } }); return (await q(`select status, last_error from notifications`))[0]; })();
   assert.equal(noCfg.status, "failed");
   assert.match(noCfg.last_error, /발송 설정이 없습니다/);
+  // 이메일은 선택 사항: SMTP 가 없으면 손님 이메일은 '건너뜀'(실패 아님), 문자는 정상. 단 사장님 이메일을 설정했는데 SMTP 가 없으면 설정 오류로 '실패'
+  await pool.query("truncate notifications restart identity");
+  process.env.OWNER_EMAIL = "owner@example.com";
+  await notify(pool, { type: "booking_cancelled", bookingId: E.bookingId, notifyOwner: true, refund: null });
+  await sendDue(pool, { providers: { sms: prov.sms, email: null } });
+  const byKind = Object.fromEntries((await q(`select audience || '/' || channel as k, status, last_error from notifications`)).map((r) => [r.k, r]));
+  assert.equal(byKind["guest/sms"].status, "sent");
+  assert.equal(byKind["guest/email"].status, "skipped", "SMTP 없이 손님 이메일은 실패가 아니라 건너뜀");
+  assert.match(byKind["guest/email"].last_error, /이메일 발송을 사용하지 않음/);
+  assert.equal(byKind["owner/email"].status, "failed", "OWNER_EMAIL 을 설정했는데 SMTP 가 없으면 설정 오류로 실패 표시");
+  assert.equal((await getDashboard(pool)).notificationsFailed, 1, "건너뜀은 실패 카드에 세지 않음");
+  const cfgSmsOnly = configStatus({ NODE_ENV: "production", SMS_PROVIDER: "solapi", SOLAPI_API_KEY: "k", SOLAPI_API_SECRET: "s", SMS_FROM: "0212345678", OWNER_PHONE: "01099998888" } as any);
+  assert.ok(cfgSmsOnly.every((c) => c.key === "cron" || c.key === "site_url" || c.ok), "문자만 쓰는 구성은 이메일 때문에 ✗ 가 나오지 않는다");
+  delete process.env.OWNER_EMAIL;
   console.log("6 통과: 발송 엔진 — 정상 발송, 재시도 간격(1분/5분/30분/2시간)→실패, 영구 오류 즉시 실패, 동시 실행 중복 없음, 설정 누락=실패 표시");
 
   // ---------- 7. 결제·취소·환불 흐름 연결
@@ -425,12 +439,13 @@ async function main() {
   await notify(pool, { type: "booking_cancelled", bookingId: tomorrow.bookingId, notifyOwner: false, refund: null });
   await sendDue(pool, { providers: { sms: null, email: null } });
   const failedId = (await q(`select id from notifications where status = 'failed'`))[0].id;
-  assert.equal((await getDashboard(pool)).notificationsFailed, 2, "대시보드 '알림 발송 실패' 카드 (문자 + 이메일 2건)");
+  assert.equal((await getDashboard(pool)).notificationsFailed, 1, "대시보드 '알림 발송 실패' 카드 (문자 1건. 이메일은 선택 사항이라 '건너뜀')");
+  assert.equal(await count("status = 'skipped'"), 1, "SMTP 가 없을 때 손님 이메일은 건너뜀으로 기록");
   const rt = await quiet(() => api({ op: "retry", id: Number(failedId) }, ownerTok));
   assert.equal(rt.status, 200);
   assert.equal(rt.body.status, "sent", "설정을 고친 뒤 다시 시도하면 발송됨 (개발용 콘솔)");
   assert.equal((await api({ op: "retry", id: Number(failedId) }, ownerTok)).status, 409, "실패 상태가 아니면 재시도 불가");
-  assert.equal((await getDashboard(pool)).notificationsFailed, 1, "하나를 재시도해 성공하면 실패 건수가 줄어든다");
+  assert.equal((await getDashboard(pool)).notificationsFailed, 0, "재시도해 성공하면 실패 건수가 줄어든다");
   console.log("11 통과: 관리자 — 테스트 발송(번호 마스킹), 실패 재시도, 직원 403, 대시보드 실패 카드");
 
   console.log("\n전체 통과");
