@@ -7,6 +7,7 @@
 import type { Pool } from "pg";
 import { decryptText } from "@/server/crypto";
 import { maskRecipient } from "./mask";
+import { notifyMode } from "./mode";
 import { providersFromEnv } from "./providers";
 import { ProviderError, type Providers } from "./types";
 
@@ -15,6 +16,18 @@ const BACKOFF_MIN = [1, 5, 30, 120];
 
 export async function sendDue(pool: Pool, opts: { limit?: number; providers?: Providers } = {}) {
   const providers = opts.providers ?? providersFromEnv();
+  // 스위치가 꺼져 있거나(off) 사장님 전용(owner)이면, 보내면 안 되는 대기 알림은 '건너뜀'으로 정리한다.
+  // (나중에 다시 켰을 때 오래된 알림이 한꺼번에 발송되는 일을 막는다)
+  const mode = notifyMode();
+  let skipped = 0;
+  if (mode !== "all") {
+    const r = await pool.query(
+      `update notifications set status = 'skipped', last_error = $1
+        where status = 'pending' and scheduled_at <= now() and ($2 = 'off' or audience = 'guest')`,
+      [mode === "off" ? "자동 알림이 꺼져 있어 보내지 않음 (NOTIFY_MODE=off)" : "손님 알림이 꺼져 있어 보내지 않음 (NOTIFY_MODE=owner)", mode]);
+    skipped = r.rowCount ?? 0;
+    if (mode === "off") return { claimed: 0, sent: 0, retry: 0, failed: 0, skipped };
+  }
   const { rows } = await pool.query(
     `with c as (
        select id from notifications where status = 'pending' and scheduled_at <= now() order by id limit $1 for update skip locked)
@@ -22,7 +35,7 @@ export async function sendDue(pool: Pool, opts: { limit?: number; providers?: Pr
        from c where n.id = c.id
      returning n.id, n.kind, n.channel, n.audience, n.recipient_enc, n.subject, n.body, n.attempts`, [opts.limit ?? 20]);
 
-  const out = { claimed: rows.length, sent: 0, retry: 0, failed: 0 };
+  const out = { claimed: rows.length, sent: 0, retry: 0, failed: 0, skipped };
   const fail = async (id: number, attempts: number, message: string, retryable: boolean) => {
     const final = !retryable || attempts >= MAX_ATTEMPTS;
     if (final) out.failed++; else out.retry++;

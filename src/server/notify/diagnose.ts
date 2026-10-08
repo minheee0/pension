@@ -4,6 +4,7 @@
  *  - 메일  : SMTP 서버에 접속해 로그인까지만 확인(verify), 메일은 보내지 않음
  */
 import nodemailer from "nodemailer";
+import { notifyMode } from "./mode";
 import { solapiAuthHeader } from "./providers/solapi";
 
 export type Level = "ok" | "warn" | "error";
@@ -16,6 +17,13 @@ const quoted = (v: string) => /^\s*["'].*["']\s*$/.test(v);
 export function analyzeEnv(env: Env): Finding[] {
   const out: Finding[] = [];
   const add = (level: Level, key: string, message: string) => out.push({ level, key, message });
+
+  // ---- 자동 알림 스위치
+  const raw = (env.NOTIFY_MODE ?? "").trim().toLowerCase(), mode = notifyMode(env);
+  if (raw && !["all", "owner", "off", "on", "true"].includes(raw)) add("error", "NOTIFY_MODE", `알 수 없는 값(${raw})입니다. all, owner, off 중 하나여야 하며, 지금은 안전하게 off 로 동작합니다.`);
+  else if (mode === "off") { add("ok", "NOTIFY_MODE", "자동 알림이 꺼져 있습니다(off). 문자·이메일은 발송되지 않아 아래 설정은 검사하지 않습니다. 켜려면 NOTIFY_MODE=owner 또는 all."); return out; }
+  else if (mode === "owner") add("ok", "NOTIFY_MODE", "사장님에게만 발송합니다(owner). 손님에게는 문자를 보내지 않습니다.");
+  else add("ok", "NOTIFY_MODE", "손님·사장님 모두 발송합니다(all).");
 
   // ---- 문자 (솔라피)
   const smsKind = env.SMS_PROVIDER ?? "";

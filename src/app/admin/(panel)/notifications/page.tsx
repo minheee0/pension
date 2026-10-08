@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { pool } from "@/server/db";
 import { configStatus, listNotifications } from "@/server/admin/notifications";
+import { describeMode, notifyMode } from "@/server/notify/mode";
 import { requireAdminPage } from "@/server/admin/session";
 import JsonForm from "@/components/admin/JsonForm";
 import { Banner, td, th } from "@/components/admin/ui";
@@ -29,6 +30,11 @@ export default async function NotificationsPage({ searchParams }: { searchParams
   return (
     <div className="space-y-5">
       <h1 className="font-serif text-2xl font-bold text-wood">알림 (문자·이메일)</h1>
+      {notifyMode() !== "all" && (
+        <Banner tone="warn"><b>{describeMode(notifyMode())}</b> — {notifyMode() === "off"
+          ? "예약 확정·입금 안내·취소 등 문자와 사장님 알림이 모두 발송되지 않습니다. 새 예약과 환불 실패는 대시보드에서 직접 확인해 주세요."
+          : "손님에게는 문자가 가지 않습니다. 사장님에게만 새 예약·취소·환불 실패를 알립니다."} 켜려면 서버 환경변수 NOTIFY_MODE 를 바꾸고 재시작하세요.</Banner>
+      )}
       {failed > 0 ? <Banner tone="warn">발송에 실패한 알림이 {failed}건 있습니다. 아래 사유를 확인하고 설정을 고친 뒤 <b>다시 시도</b>를 누르세요.</Banner>
         : <Banner>실패한 알림이 없습니다.</Banner>}
 

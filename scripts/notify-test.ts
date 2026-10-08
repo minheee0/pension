@@ -24,6 +24,7 @@ import { notify } from "../src/server/notify/enqueue";
 import { render, md, type Kind } from "../src/server/notify/templates";
 import { cleanupNotifications, sendDue, MAX_ATTEMPTS } from "../src/server/notify/send";
 import { scheduleReminders } from "../src/server/notify/schedule";
+import { notifyMode } from "../src/server/notify/mode";
 import { createSolapiProvider, solapiAuthHeader } from "../src/server/notify/providers/solapi";
 import { createSmtpProvider } from "../src/server/notify/providers/smtp";
 import { providersFromEnv } from "../src/server/notify/providers";
@@ -117,7 +118,7 @@ async function main() {
   const mock = await startMockToss("test_sk_mock");
   mockRef = mock;
   Object.assign(process.env, { TOSS_API_BASE: mock.url, TOSS_SECRET_KEY: "test_sk_mock", TOSS_CLIENT_KEY: "test_ck_mock", SITE_URL: "https://manbok.example.kr/" });
-  delete process.env.OWNER_PHONE; delete process.env.OWNER_EMAIL; delete process.env.CRON_SECRET;
+  delete process.env.OWNER_PHONE; delete process.env.OWNER_EMAIL; delete process.env.CRON_SECRET; delete process.env.NOTIFY_MODE;
   await pool.query("truncate bookings, stay_dates, payment_events, audit_logs, admin_users, lookup_attempts, notifications restart identity cascade");
   await pool.query("delete from season_periods; delete from date_overrides");
   await pool.query("update base_prices set price = case day_type when 'weekday' then 600000 else 650000 end");
@@ -447,6 +448,66 @@ async function main() {
   assert.equal((await api({ op: "retry", id: Number(failedId) }, ownerTok)).status, 409, "실패 상태가 아니면 재시도 불가");
   assert.equal((await getDashboard(pool)).notificationsFailed, 0, "재시도해 성공하면 실패 건수가 줄어든다");
   console.log("11 통과: 관리자 — 테스트 발송(번호 마스킹), 실패 재시도, 직원 403, 대시보드 실패 카드");
+
+  // ---------- 12. 자동 알림 스위치 (NOTIFY_MODE)
+  await pool.query("truncate notifications restart identity");
+  process.env.OWNER_PHONE = "01099998888"; delete process.env.OWNER_EMAIL;
+  const boom: Providers = { sms: { name: "x", async send() { throw new Error("보내면 안 됨"); } }, email: { name: "x", async send() { throw new Error("보내면 안 됨"); } } };
+  assert.deepEqual(["", "all", "ALL", "on", "owner", "OWNER ", "off", "of", "maybe"].map((v) => notifyMode({ NOTIFY_MODE: v })), ["all", "all", "all", "all", "owner", "owner", "off", "off", "off"], "미설정=all, 알 수 없는 값(오타)은 안전하게 off");
+
+  // (a) off: 아무 알림도 만들지 않고, 결제·예약은 정상
+  process.env.NOTIFY_MODE = "off";
+  const off1 = await paid(150, "끄기테스트", "off@example.com");
+  assert.equal(off1.c.kind, "confirmed", "알림이 꺼져 있어도 결제·예약 확정은 정상");
+  assert.equal(await count(), 0, "off: 어떤 알림도 만들지 않음");
+  await mk(152, "내일체크인", "confirmed", 1, 2);
+  assert.deepEqual(await scheduleReminders(pool), { checkinReminders: 0, reviewRequests: 0, disabled: true });
+  assert.equal(await count(), 0, "off: 체크인 안내·후기 요청도 만들지 않음");
+  delete process.env.NOTIFY_MODE;                                         // 켜져 있을 때 만들어진 대기 알림이 있었다면…
+  await notify(pool, { type: "booking_confirmed", bookingId: off1.bookingId });
+  assert.ok((await count("status = 'pending'")) >= 3);
+  process.env.NOTIFY_MODE = "off";                                         // …꺼진 뒤에는 보내지 않고 '건너뜀'으로 정리한다 (나중에 켜도 오래된 알림이 쏟아지지 않음)
+  const r1 = await sendDue(pool, { providers: boom });
+  assert.equal(r1.sent, 0); assert.ok(r1.skipped >= 3);
+  assert.equal(await count("status = 'pending'"), 0);
+  assert.match((await q(`select last_error from notifications limit 1`))[0].last_error, /꺼져 있어 보내지 않음/);
+  assert.equal((await getDashboard(pool)).notificationsFailed, 0, "건너뜀은 실패로 세지 않음");
+  const offTest = await api({ op: "test", channel: "sms" }, ownerTok);
+  assert.equal(offTest.status, 400);
+  assert.match(offTest.body.error.message, /NOTIFY_MODE/);
+  assert.equal(configStatus({ NOTIFY_MODE: "off" } as any).find((c) => c.key === "mode")!.ok, false);
+
+  // (b) owner: 사장님에게만
+  await pool.query("truncate notifications restart identity");
+  process.env.NOTIFY_MODE = "owner";
+  const own = await paid(154, "사장님전용", "own@example.com");
+  assert.deepEqual((await q(`select audience || '/' || channel || '/' || kind as k from notifications order by id`)).map((r) => r.k), ["owner/sms/owner_new_booking"], "owner: 손님 문자·이메일은 만들지 않고 사장님 알림만");
+  await cancelBooking(pool, { bookingNo: own.bookingNo, phone: PHONE, expectedRefund: own.total, ip: "9.9.9.9" });
+  assert.deepEqual((await q(`select kind from notifications order by id`)).map((r) => r.kind), ["owner_new_booking", "owner_cancelled"], "손님이 취소해도 사장님에게만");
+  const ofail = await paid(156, "환불실패O");
+  mock.state.cancelFails = true;
+  await quiet(() => adminCancelBooking(pool, adm, { bookingNo: ofail.bookingNo, mode: "host", expectedRefund: ofail.total }));
+  mock.state.cancelFails = false;
+  assert.equal(await count("kind = 'owner_refund_failed'"), 1, "owner 모드에서도 환불 실패 경고는 사장님께 간다");
+  assert.deepEqual(await scheduleReminders(pool), { checkinReminders: 0, reviewRequests: 0, disabled: true });
+  delete process.env.NOTIFY_MODE;                                          // 켜져 있던 시절의 손님 대기 알림이 남아 있다면…
+  await notify(pool, { type: "booking_confirmed", bookingId: own.bookingId });
+  process.env.NOTIFY_MODE = "owner";
+  const sentTo: string[] = [];
+  const rec: Providers = { sms: { name: "r", async send(m) { sentTo.push(m.to); return {}; } }, email: { name: "r", async send(m) { sentTo.push(m.to); return {}; } } };
+  await sendDue(pool, { providers: rec });
+  assert.ok(sentTo.length >= 1 && sentTo.every((t) => t === "01099998888"), `owner 모드: 사장님 번호로만 발송 (${sentTo.join(",")})`);
+  assert.ok((await count("audience = 'guest' and status = 'skipped'")) >= 1, "…손님 알림은 건너뜀으로 정리");
+  assert.equal(await count("audience = 'guest' and status = 'sent'"), 0);
+  const ownTest = await quiet(() => api({ op: "test", channel: "sms" }, ownerTok));
+  assert.deepEqual([ownTest.status, ownTest.body.status], [200, "sent"], "owner 모드에서는 테스트 발송 가능");
+
+  // (c) 다시 all 로: 정상 동작
+  delete process.env.NOTIFY_MODE;
+  await pool.query("delete from notifications");
+  await notify(pool, { type: "booking_confirmed", bookingId: own.bookingId });
+  assert.ok((await count("audience = 'guest'")) >= 1, "all 로 되돌리면 손님 알림이 다시 만들어짐");
+  console.log("12 통과: 자동 알림 스위치 — off(알림 없음·결제 정상·남은 알림 건너뜀) / owner(사장님만, 환불 실패 경고 유지, 손님 알림 건너뜀) / 미설정=all / 오타=off");
 
   console.log("\n전체 통과");
 }

@@ -59,7 +59,7 @@ async function smtpMock(accept: boolean) {
 const closers: (() => Promise<void>)[] = [];
 async function main() {
   // ---------- 1. 환경변수 형식 검사
-  let f = levels({ ...baseSol, OWNER_PHONE: "010-9999-8888", OWNER_EMAIL: "o@x.co", SITE_URL: "https://manbok.kr" });
+  let f = levels({ ...baseSol, OWNER_PHONE: "010-9999-8888", SITE_URL: "https://manbok.kr" });      // 문자만 쓰는 정상 구성
   assert.ok(has(f, "ok", "SOLAPI_API_KEY") && has(f, "ok", "SOLAPI_API_SECRET") && has(f, "ok", "SMS_FROM") && has(f, "ok", "OWNER_PHONE"), "올바른 값은 통과");
   assert.ok(!f.some((x) => x.level === "error"));
 
@@ -78,6 +78,12 @@ async function main() {
   assert.ok(has(levels({ ...baseSol }), "ok", "SMTP_URL", /사용하지 않습니다/), "SMTP 를 설정하지 않는 것은 오류가 아니라 선택");
   assert.ok(has(levels({ ...baseSol, OWNER_EMAIL: "o@x.co" }), "error", "SMTP_URL", /OWNER_EMAIL/), "사장님 이메일은 있는데 SMTP 가 없는 불일치는 오류");
   assert.ok(has(levels({ ...baseSol }), "ok", "OWNER_EMAIL"));
+  assert.ok(!levels({ ...baseSol, OWNER_EMAIL: "o@x.co", SMTP_URL: "smtps://me%40gmail.com:abcdefghijklmnop@smtp.gmail.com:465", MAIL_FROM: "me@gmail.com" }).some((x) => x.level === "error"), "문자 + 이메일을 모두 쓰는 정상 구성");
+  assert.ok(has(levels({ NOTIFY_MODE: "off" }), "ok", "NOTIFY_MODE", /꺼져 있습니다/), "off 로 두면 안내");
+  assert.equal(levels({ NOTIFY_MODE: "off", SOLAPI_API_KEY: "bad", SMTP_URL: "garbage" }).length, 1, "꺼져 있으면 문자·메일 설정은 검사하지 않음(빈 설정도 오류로 보지 않음)");
+  assert.ok(has(levels({ NOTIFY_MODE: "of" }), "error", "NOTIFY_MODE", /알 수 없는 값/), "오타는 오류로 알려 줌");
+  assert.ok(has(levels({ NOTIFY_MODE: "owner", ...baseSol }), "ok", "NOTIFY_MODE", /사장님에게만/));
+  assert.ok(has(levels({ ...baseSol }), "ok", "NOTIFY_MODE", /모두 발송/));
   const smtp = (url: string, from = "만복 <me@gmail.com>") => levels({ SMTP_URL: url, MAIL_FROM: from });
   assert.ok(has(smtp("smtps://me%40gmail.com:abcdefghijklmnop@smtp.gmail.com:465"), "ok", "SMTP_URL", /16자/));
   assert.ok(has(smtp("smtps://me%40gmail.com:abcd efgh ijkl mnop@smtp.gmail.com:465"), "error", "SMTP_URL", /공백/), "구글이 보여 주는 공백 포함 앱 비밀번호");

@@ -5,6 +5,7 @@
 import { after } from "next/server";
 import type { Pool } from "pg";
 import { encryptText } from "@/server/crypto";
+import { notifyMode } from "./mode";
 import { sendDue } from "./send";
 import { render, type Ctx, type Kind } from "./templates";
 import type { Audience, Channel } from "./types";
@@ -36,6 +37,7 @@ async function insert(db: Pool, row: { kind: Kind; audience: Audience; channel: 
 const ownerChannels = (): Channel[] => [...(process.env.OWNER_PHONE ? ["sms" as const] : []), ...(process.env.OWNER_EMAIL ? ["email" as const] : [])];
 
 async function guestRows(db: Pool, kind: Kind, b: Booking, ctx: Ctx, scheduledAt?: Date, key = `${kind}:${b.id}`) {
+  if (notifyMode() !== "all") return;   // 손님 알림은 NOTIFY_MODE=all 일 때만
   await insert(db, { kind, audience: "guest", channel: "sms", bookingId: b.id, recipientEnc: b.guest_phone_enc, dedupe: `${key}:sms`, scheduledAt, ctx });
   if (b.guest_email) await insert(db, { kind, audience: "guest", channel: "email", bookingId: b.id, recipientEnc: encryptText(b.guest_email), dedupe: `${key}:email`, scheduledAt, ctx });
 }
@@ -60,6 +62,7 @@ function dispatchSoon(db: Pool) {
 }
 
 export async function notify(db: Pool, ev: NotifyEvent): Promise<void> {
+  if (notifyMode() === "off") return;   // 자동 알림 전체 끔: 아무것도 만들지 않는다 (결제·취소 등 본 처리에는 영향 없음)
   await enqueueEvent(db, ev);
   dispatchSoon(db);
 }
