@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test:privacy": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/privacy-test.ts",
     "test:notify": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/notify-test.ts",
     "test:dash": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/dashboard-links-test.ts",
     "test:sync": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/admin-sync-test.ts",

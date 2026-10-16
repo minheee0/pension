@@ -11,6 +11,7 @@
  *  4) 만료된 임시 점유(held_until <= now())는 크론이 늦어도 "빈 날"로 취급한다(lazy expiry).
  *  5) 결제가 이미 끝났다면(늦은 웹훅) 날짜가 아직 비어 있는 한 확정해 준다. 못 잡으면 HOLD_LOST → 환불.
  */
+import { LEGAL } from "@/lib/legal";
 import { randomBytes } from 'node:crypto';
 import { Pool, PoolClient, types } from 'pg';
 
@@ -382,20 +383,21 @@ export async function holdStay(pool: Pool, req: HoldRequest): Promise<HoldResult
          booking_no, status, guest_name, guest_phone_enc, guest_phone_hash, guest_phone_last4,
          guest_email, check_in, check_out, guests,
          room_total, extra_guest_fee, option_total, discount_amount, total_amount,
-         hold_expires_at, policy_snapshot, price_snapshot, request_memo, agreed_terms_at)
+         hold_expires_at, policy_snapshot, price_snapshot, request_memo, agreed_terms_at, terms_version, privacy_version)
        values ($1, 'held', $2, $3, $4, $5, $6, $7::date, $8::date, $9,
                $10, $11, $12, $13, $14,
                now() + make_interval(mins => $15::int),
                (select jsonb_build_object(
                   'refund_policies', coalesce((select jsonb_agg(to_jsonb(r) - 'id') from refund_policies r), '[]'::jsonb),
                   'settings',        (select jsonb_object_agg(key, value) from policy_settings))),
-               $16::jsonb, $17, now())
+               $16::jsonb, $17, now(), $18, $19)
        returning id, hold_expires_at`,
       [
         bookingNo, req.guest.name.trim(), req.guest.phoneEnc, req.guest.phoneHash,
         req.guest.phoneLast4, req.guest.email ?? null, req.checkIn, req.checkOut, req.guests,
         quote.roomTotal, quote.extraGuestFee, quote.optionTotal, quote.discountAmount,
         quote.totalAmount, cfg.holdMinutes, JSON.stringify(quote), req.memo ?? null,
+        LEGAL.termsVersion, LEGAL.privacyVersion,    // 동의 시점에 게시되어 있던 이용약관·개인정보처리방침 버전
       ],
     );
     const { id: bookingId, hold_expires_at: holdExpiresAt } = br[0];

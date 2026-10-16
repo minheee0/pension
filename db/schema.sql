@@ -181,6 +181,9 @@ create table bookings (
   price_snapshot     jsonb not null,                  -- 예약 시점 견적 전체
   request_memo       text,
   agreed_terms_at    timestamptz not null,            -- 환불규정 동의 시각
+  terms_version      text,                            -- 예약 당시 동의한 이용약관 버전
+  privacy_version    text,                            -- 예약 당시 안내받은 개인정보처리방침 버전
+  anonymized_at      timestamptz,                     -- 보유기간 경과로 개인정보를 파기(비식별화)한 시각
   cancelled_at       timestamptz,
   cancel_reason      text,
   cancelled_by       text check (cancelled_by in ('guest', 'admin', 'system')),
@@ -189,6 +192,7 @@ create table bookings (
   check (check_out > check_in),
   check (total_amount = room_total + extra_guest_fee + option_total - discount_amount)
 );
+create index idx_bookings_purge on bookings (status, created_at) where anonymized_at is null;
 create index idx_bookings_lookup   on bookings (booking_no, guest_phone_hash);
 create index idx_bookings_status   on bookings (status, check_in);
 create index idx_bookings_checkin  on bookings (check_in);

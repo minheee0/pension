@@ -6,6 +6,7 @@
  */
 import type { Pool } from "pg";
 import { decryptText } from "@/server/crypto";
+import { RETENTION } from "@/lib/legal";
 import { maskRecipient } from "./mask";
 import { notifyMode } from "./mode";
 import { providersFromEnv } from "./providers";
@@ -67,9 +68,9 @@ export async function sendDue(pool: Pool, opts: { limit?: number; providers?: Pr
   return out;
 }
 
-/** 오래된 기록 정리: 발송 완료 90일, 실패·건너뜀 180일 후 삭제(연락처 암호문·문구를 오래 쌓아 두지 않는다) */
+/** 오래된 기록 정리: 발송 완료·실패·건너뜀 기록의 보유기간은 src/lib/legal.ts 의 RETENTION (개인정보처리방침과 같은 값)(연락처 암호문·문구를 오래 쌓아 두지 않는다) */
 export async function cleanupNotifications(pool: Pool) {
-  const a = await pool.query(`delete from notifications where status = 'sent' and created_at < now() - interval '90 days'`);
-  const b = await pool.query(`delete from notifications where status in ('failed', 'skipped') and created_at < now() - interval '180 days'`);
+  const a = await pool.query(`delete from notifications where status = 'sent' and created_at < now() - make_interval(days => $1::int)`, [RETENTION.notificationSentDays]);
+  const b = await pool.query(`delete from notifications where status in ('failed', 'skipped') and created_at < now() - make_interval(days => $1::int)`, [RETENTION.notificationFailedDays]);
   return { deleted: (a.rowCount ?? 0) + (b.rowCount ?? 0) };
 }

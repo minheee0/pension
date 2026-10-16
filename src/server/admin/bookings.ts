@@ -35,9 +35,9 @@ export async function listBookings(pool: Pool, f: { q?: string; status?: string;
   return { rows, total, page, pageSize: PAGE };
 }
 
-async function bookingRowByNo(pool: Pool, bookingNo: string): Promise<BookingRow & { guest_phone_enc: string; guest_email: string | null; request_memo: string | null }> {
+async function bookingRowByNo(pool: Pool, bookingNo: string): Promise<BookingRow & { guest_phone_enc: string; guest_email: string | null; request_memo: string | null; anonymized_at: Date | null }> {
   const { rows } = await pool.query(
-    `select id, booking_no, status, guest_name, guest_phone_last4::text as guest_phone_last4, guest_phone_enc, guest_email, request_memo,
+    `select id, booking_no, status, guest_name, guest_phone_last4::text as guest_phone_last4, guest_phone_enc, guest_email, request_memo, anonymized_at,
             check_in::text as check_in, check_out::text as check_out, nights, guests,
             room_total, extra_guest_fee, option_total, discount_amount, total_amount, created_at, price_snapshot, policy_snapshot
        from bookings where booking_no = $1`, [bookingNo.toUpperCase()]);
@@ -60,7 +60,7 @@ export async function getBookingDetail(pool: Pool, admin: AdminCtx, bookingNo: s
   await audit(pool, admin, "booking.view", { type: "booking", id: b.booking_no });   // 전화번호 원문을 화면에 보이므로 열람 기록을 남긴다
   return {
     booking: {
-      bookingNo: b.booking_no, status: b.status, guestName: b.guest_name, phone: decryptText(b.guest_phone_enc), email: b.guest_email, memo: b.request_memo,
+      bookingNo: b.booking_no, status: b.status, guestName: b.guest_name, phone: b.anonymized_at ? "(파기됨)" : decryptText(b.guest_phone_enc), email: b.guest_email, memo: b.request_memo,
       checkIn: b.check_in, checkOut: b.check_out, nights: b.nights, guests: b.guests,
       roomTotal: b.room_total, extraGuestFee: b.extra_guest_fee, optionTotal: b.option_total, totalAmount: b.total_amount, createdAt: b.created_at,
     },

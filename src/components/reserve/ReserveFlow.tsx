@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import RangeCalendar, { CalDay, addDays, fmtDate, shiftMonth, won } from "./RangeCalendar";
 import RefundTable from "@/components/RefundTable";
 import PaySection from "./PaySection";
+import ConsentBox, { isAllAgreed, type Consent } from "./ConsentBox";
 import type { PolicyView } from "@/server/refund/table";
 import { SITE } from "@/lib/site";
 
@@ -73,7 +74,8 @@ export default function ReserveFlow(props: {
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [email, setEmail] = useState("");
   const [memo, setMemo] = useState("");
-  const [agreed, setAgreed] = useState(false);
+  const [consent, setConsent] = useState<Consent>({ terms: false, privacy: false, refund: false });   // 이용약관·개인정보·환불 규정 (모두 필수)
+  const agreed = isAllAgreed(consent);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
   const [held, setHeld] = useState<Held | null>(null);
@@ -188,7 +190,7 @@ export default function ReserveFlow(props: {
   if (incomplete) missing.push("옵션 이용 날짜·시간");
   if (!name.trim()) missing.push("이름");
   if (!phoneValid) missing.push("휴대폰 번호");
-  if (!agreed) missing.push("환불 규정 동의");
+  if (!agreed) missing.push("약관 동의(이용약관·개인정보·환불 규정)");
 
   async function submit() {
     if (!quote || !checkIn || !checkOut) return;
@@ -324,7 +326,7 @@ export default function ReserveFlow(props: {
             <label className="text-sm sm:col-span-2">이메일 (선택)<input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
             <label className="text-sm sm:col-span-2">요청사항 (선택)<textarea className={inputCls} rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} /></label>
           </div>
-          <p className="mt-2 text-xs text-giwa">예약 확인과 안내 문자 발송에만 사용하며, 조회 시 예약번호와 함께 필요합니다.</p>
+          <p className="mt-2 text-xs text-giwa">예약 확인·결제·이용 안내에 사용하며, 조회·취소 시 예약번호와 함께 필요합니다. 자세한 내용은 <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">개인정보처리방침</a>을 확인해 주세요.</p>
         </section>
 
         {policy && (
@@ -356,10 +358,7 @@ export default function ReserveFlow(props: {
             </div>
           )}
 
-          <label className="mt-5 flex items-start gap-2 text-sm">
-            <input type="checkbox" className="mt-1" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-            <span>위 취소·환불 규정을 확인했으며 동의합니다.</span>
-          </label>
+          <ConsentBox value={consent} onChange={setConsent} />
           {submitErr && <p className="mt-3 text-sm text-red-800">{submitErr}</p>}
           <button type="button" onClick={submit} disabled={!canSubmit}
             className="mt-4 w-full rounded bg-wood px-4 py-3 text-hanji hover:bg-giwa disabled:cursor-not-allowed disabled:opacity-40">

@@ -7,7 +7,8 @@ import Stars from "./Stars";
 /** 홈 화면의 '머문 분들의 이야기'. DB 오류가 나도 홈 화면 전체가 깨지지 않도록 조용히 대체 문구를 보여준다. */
 export default async function HomeReviews() {
   let data: Awaited<ReturnType<typeof load>> | null = null;
-  try { data = await load(); } catch { data = null; }
+  try { data = await load(); }
+  catch (e) { console.error("[reviews] 홈 화면 후기를 불러오지 못했습니다:", (e as Error).message); data = null; }   // DB 문제가 있어도 홈은 열린다
   return (
     <section className="mx-auto mt-20 max-w-5xl px-5">
       <div className="flex flex-wrap items-end justify-between gap-2">

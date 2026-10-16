@@ -415,7 +415,7 @@ async function main() {
   const cr = await quiet(async () => cron("GET", "Bearer cron-secret-value"));
   assert.equal(cr.status, 200);
   const cj: any = await cr.json();
-  assert.deepEqual(Object.keys(cj.results), ["bookingsCompleted", "holdsReleased", "depositsReconciled", "refundsRetried", "remindersScheduled", "notificationsSent", "notificationsCleaned"]);
+  assert.deepEqual(Object.keys(cj.results), ["bookingsCompleted", "holdsReleased", "depositsReconciled", "refundsRetried", "remindersScheduled", "notificationsSent", "notificationsCleaned", "personalDataPurged"]);
   assert.ok(Object.values(cj.results).every((v: any) => !v?.error), JSON.stringify(cj.results));
   assert.ok(cj.results.notificationsSent.sent >= 1, "정기 작업이 대기 중인 알림을 발송");
   const again: any = await (await quiet(async () => cron("POST", "Bearer cron-secret-value"))).json();
