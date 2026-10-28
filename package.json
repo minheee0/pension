@@ -11,6 +11,8 @@
     "bookings:complete": "tsx --env-file=.env.local scripts/complete-bookings.ts",
     "test:admin": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/admin-test.ts",
     "admin:create": "tsx --env-file=.env.local scripts/create-admin.ts",
+    "db:apply:vercel": "tsx --env-file=.env.vercel scripts/db-apply.ts db/schema.sql db/prices.sql",
+    "admin:create:vercel": "tsx --env-file=.env.vercel scripts/create-admin.ts",
     "refunds:retry": "tsx --env-file=.env.local scripts/retry-refunds.ts",
     "payments:reconcile": "tsx --env-file=.env.local scripts/reconcile-payments.ts",
     "test:va": "cross-env ALLOW_TRUNCATE=1 DATABASE_URL=postgres://hanok:hanok_dev_pw@localhost:5432/hanok_test tsx scripts/vaccount-test.ts",
