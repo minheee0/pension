@@ -1,11 +1,10 @@
 import Link from "next/link";
 import Photo from "@/components/Photo";
 import HomeReviews from "@/components/reviews/HomeReviews";
+import HomeSearch from "@/components/reserve/HomeSearch";
 import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";   // 후기를 DB에서 읽어 오므로 매 요청마다 만든다
-
-const inputCls = "mt-1 block w-full rounded border border-line bg-white px-3 py-2 text-base";
 
 export default function Home() {
   return (
@@ -16,18 +15,7 @@ export default function Home() {
           <h1 className="mt-4 font-serif text-5xl font-bold md:text-7xl">{SITE.name}</h1>
           <p className="mt-4 max-w-xl text-lg opacity-90">{SITE.tagline}</p>
 
-          <form action="/reserve" className="mt-10 grid gap-3 rounded-xl bg-hanji p-4 text-ink md:grid-cols-[1fr_1fr_7rem_auto]">
-            <label className="text-xs">체크인<input type="date" name="checkIn" required className={inputCls} /></label>
-            <label className="text-xs">체크아웃<input type="date" name="checkOut" required className={inputCls} /></label>
-            <label className="text-xs">인원
-              <select name="guests" defaultValue={SITE.baseGuests} className={inputCls}>
-                {Array.from({ length: SITE.maxGuests }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>{n}명</option>
-                ))}
-              </select>
-            </label>
-            <button className="rounded bg-wood px-6 py-3 text-hanji hover:bg-giwa md:self-end">예약 가능일 보기</button>
-          </form>
+          <HomeSearch />
         </div>
       </section>
 

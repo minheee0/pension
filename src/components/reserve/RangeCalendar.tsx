@@ -45,7 +45,7 @@ export default function RangeCalendar(p: Props) {
   const dates = Array.from({ length: count }, (_, i) => `${p.month}-${String(i + 1).padStart(2, "0")}`);
 
   return (
-    <div className="rounded-lg border border-line bg-white/60 p-4">
+    <div className="w-full max-w-md rounded-lg border border-line bg-white/60 p-4">   {/* 넓은 화면에서 칸이 지나치게 커지지 않게 */}
       <div className="mb-3 flex items-center justify-between">
         <button type="button" aria-label="이전 달" disabled={p.month <= p.minMonth}
           onClick={() => p.onMonth(shiftMonth(p.month, -1))}

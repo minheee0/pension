@@ -223,8 +223,9 @@ export default function ReserveFlow(props: {
     setSel((s) => ({ ...s, [id]: { ...EMPTY_SEL, ...s[id], ...p } }));
 
   return (
-    <div className="mt-8 grid gap-8 md:grid-cols-[1fr_20rem]">
-      <div className="space-y-10">
+    // minmax(0,…)·min-w-0: 넓은 환불표(가로 스크롤)가 칸 너비를 늘려 모바일에서 달력까지 화면 밖으로 밀리지 않게
+    <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="min-w-0 space-y-10">
         <section>
           <h2 className="font-serif text-2xl font-bold">1. 날짜 선택</h2>
           <p className="mb-3 mt-1 text-sm text-giwa">
