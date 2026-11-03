@@ -11,7 +11,7 @@ export default function Home() {
     <>
       <section className="bg-gradient-to-b from-wood to-giwa text-hanji">
         <div className="mx-auto max-w-5xl px-5 py-20 md:py-32">
-          <p className="text-sm tracking-[0.3em] opacity-80">{SITE.region} · 독채 한옥 스테이</p>
+          <p className="text-sm tracking-[0.3em] opacity-80">{SITE.region ? `${SITE.region} · ` : ""}독채 한옥 스테이</p>
           <h1 className="mt-4 font-serif text-5xl font-bold md:text-7xl">{SITE.name}</h1>
           <p className="mt-4 max-w-xl text-lg opacity-90">{SITE.tagline}</p>
 
@@ -20,12 +20,12 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-5xl px-5 pt-20">
-        <h2 className="font-serif text-3xl font-bold text-wood">온 집을 한 팀이 씁니다</h2>
+        <h2 className="font-serif text-3xl font-bold text-wood">우리만의 공간에서, 온전히 우리만의 시간</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {[
-            ["독채 한 채", "다른 손님 없이 안채와 마당을 우리 가족, 우리 일행만 씁니다."],
+            ["독채 한 채", "다른 손님과 공간을 나누지 않습니다. 안채부터 마당까지 한옥 한 채를 우리 일행만을 위해 온전히 누려보세요."],
             ["온돌과 툇마루", "따뜻한 구들방과 마루에 앉아 한옥의 시간을 천천히 느껴 보세요."],
-            ["바비큐 · 찜질방", "저녁엔 마당에서 바비큐를, 밤엔 찜질방에서 몸을 풀 수 있습니다. (유료 옵션)"],
+            ["바비큐 · 찜질방", "저녁엔 마당에서 바비큐를, 하루의 끝에는 찜질방에서 따뜻한 휴식을. 만복에서 더욱 특별한 하루를 만들어보세요. (유료 옵션)"],
           ].map(([t, d]) => (
             <div key={t} className="rounded-lg border border-line bg-white/60 p-6">
               <h3 className="font-serif text-xl font-bold">{t}</h3>
