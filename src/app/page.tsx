@@ -11,7 +11,7 @@ export default function Home() {
     <>
       <section className="bg-gradient-to-b from-wood to-giwa text-hanji">
         <div className="mx-auto max-w-5xl px-5 py-20 md:py-32">
-          <p className="text-sm tracking-[0.3em] opacity-80">{SITE.region ? `${SITE.region} · ` : ""}독채 한옥 스테이</p>
+          <p className="text-sm tracking-[0.3em] opacity-80">{SITE.region ? `${SITE.region} · ` : ""}프라이빗 한옥 스테이</p>
           <h1 className="mt-4 font-serif text-5xl font-bold md:text-7xl">{SITE.name}</h1>
           <p className="mt-4 max-w-xl text-lg opacity-90">{SITE.tagline}</p>
 

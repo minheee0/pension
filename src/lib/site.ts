@@ -2,7 +2,7 @@
 // 요금·인원 규칙은 나중에 DB(policy_settings)에서 읽도록 바꿉니다. 지금은 안내 문구용 값입니다.
 export const SITE = {
   name: "만복",
-  tagline: "한옥 한 채, 오직 한 팀만을 위한 온전한 쉽",
+  tagline: "한옥 한 채, 오직 한 팀만을 위한 온전한 쉼",
   region: "",                       // 비워 두면 홈 화면에 지역을 표시하지 않습니다
   address: "(주소 입력 필요)",
   phone: "(전화번호 입력 필요)",
