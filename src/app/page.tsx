@@ -23,9 +23,9 @@ export default function Home() {
         <h2 className="font-serif text-3xl font-bold text-wood">우리만의 공간에서, 온전히 우리만의 시간</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {[
-            ["독채 한 채", "다른 손님과 공간을 나누지 않습니다. 안채부터 마당까지 한옥 한 채를 우리 일행만을 위해 온전히 누려보세요."],
-            ["온돌과 툇마루", "따뜻한 구들방과 마루에 앉아 한옥의 시간을 천천히 느껴 보세요."],
-            ["바비큐 · 찜질방", "저녁엔 마당에서 바비큐를, 하루의 끝에는 찜질방에서 따뜻한 휴식을. 만복에서 더욱 특별한 하루를 만들어보세요. (유료 옵션)"],
+            ["프라이빗 독채", "안채부터 마당까지, 우리 일행만을 위한 공간."],
+            ["한옥의 정취", "전통 한옥이 선사하는 고즈넉한 분위기를 느껴보세요."],
+            ["바비큐 · 찜질방", "마당에서 즐기는 바비큐, 찜질방에서 보내는 따뜻한 밤. (유료 옵션)"],
           ].map(([t, d]) => (
             <div key={t} className="rounded-lg border border-line bg-white/60 p-6">
               <h3 className="font-serif text-xl font-bold">{t}</h3>
