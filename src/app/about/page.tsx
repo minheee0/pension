@@ -13,7 +13,7 @@ const hasPhone = !isPlaceholder(SITE.phone);
 export default function About() {
   return (
     <PageShell title={`${SITE.name} 이야기`} lead={SITE.tagline}>
-      <Photo label="한옥 전경" className="mt-8 aspect-video" />
+      <Photo label="창밖 풍경" src="/images/stay/view.webp" className="mt-8 aspect-video" sizes="(max-width: 768px) 100vw, 768px" priority />
 
       <Section title="이름에 담은 마음">
         <p>

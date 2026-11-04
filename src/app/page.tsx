@@ -39,7 +39,7 @@ export default function Home() {
       </section>
 
       <section className="mx-auto mt-20 grid max-w-5xl gap-8 px-5 md:grid-cols-2">
-        <Photo label="외관·마당" className="aspect-[4/3]" />
+        <Photo label="거실" src="/images/stay/living.webp" className="aspect-[4/3]" />
         <div className="self-center">
           <h2 className="font-serif text-3xl font-bold text-wood">독채 안내</h2>
           <p className="mt-3 text-giwa">기준 {SITE.baseGuests}명, 최대 {SITE.maxGuests}명까지 머물 수 있습니다. 요금은 예약 달력에서 날짜별로 확인하실 수 있어요.</p>

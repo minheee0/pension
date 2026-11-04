@@ -10,11 +10,14 @@ export default function Stay() {
   return (
     <PageShell title="독채 안내" lead={`기준 ${SITE.baseGuests}명 · 최대 ${SITE.maxGuests}명 · 한 팀 전용`}>
       <div className="mt-8 grid gap-3 md:grid-cols-3">
-        <Photo label="안채" className="aspect-[4/3] md:col-span-2 md:row-span-2 md:aspect-auto" />
+        <Photo label="거실" src="/images/stay/living.webp" priority sizes="(max-width: 768px) 100vw, 512px" className="aspect-[4/3] md:col-span-2 md:row-span-2 md:aspect-auto" />
+        <Photo label="창호" src="/images/stay/changho.webp" sizes="(max-width: 768px) 100vw, 256px" className="aspect-[4/3]" />
+        <Photo label="창밖 풍경" src="/images/stay/view.webp" sizes="(max-width: 768px) 100vw, 256px" className="aspect-[4/3]" />
+      </div>
+      {/* 아직 사진이 없는 곳: 사진을 public/images/stay 에 넣고 src="/images/stay/파일명" 을 붙이면 자리표시가 사진으로 바뀐다 */}
+      <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Photo label="마당" className="aspect-[4/3]" />
         <Photo label="찜질방" className="aspect-[4/3]" />
-      </div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
         <Photo label="자쿠지" className="aspect-[4/3]" />
         <Photo label="족욕 공간" className="aspect-[4/3]" />
       </div>
