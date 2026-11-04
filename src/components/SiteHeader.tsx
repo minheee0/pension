@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import { SITE } from "@/lib/site";
 
 const NAV = [
@@ -14,7 +15,7 @@ export default function SiteHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-hanji/95 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-5 py-3">
-        <Link href="/" className="whitespace-nowrap font-serif text-2xl font-bold text-wood">{SITE.name}</Link>
+        <Link href="/" aria-label={`${SITE.name} 홈`} className="whitespace-nowrap"><Logo /></Link>
         <div className="flex items-center gap-6 text-sm">
           <nav className="hidden items-center gap-6 md:flex">
             {NAV.map((n) => (

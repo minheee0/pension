@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import { LEGAL } from "@/lib/legal";
 import { SITE } from "@/lib/site";
 
@@ -8,7 +9,7 @@ export default function SiteFooter() {
   return (
     <footer className="mt-24 bg-giwa text-sm text-hanji/80">
       <div className="mx-auto max-w-5xl space-y-1 px-5 py-10">
-        <p className="font-serif text-lg text-hanji">{SITE.name}</p>
+        <p className="pb-2"><Logo tone="light" /></p>
         <p>{SITE.address} · {SITE.phone}{LEGAL.contactEmail ? ` · ${LEGAL.contactEmail}` : ""}</p>
         <p>대표 {b.owner} · 사업자등록번호 {b.bizNo}</p>
         <p>통신판매업 {b.ecommerceNo} · 숙박업 등록 {b.lodgingNo}</p>
