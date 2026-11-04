@@ -13,8 +13,8 @@ const hasPhone = !isPlaceholder(SITE.phone);
 export default function About() {
   return (
     <PageShell title={`${SITE.name} 이야기`} lead={SITE.tagline}>
-      {/* 대표 사진 자리 (나중에 교체 예정). 다시 넣을 때:
-          <Photo label="사진 설명" src="/images/stay/파일명.webp" className="mt-8 aspect-video" sizes="(max-width: 768px) 100vw, 768px" priority /> */}
+      {/* 대표 사진 자리: 외관 전경(가로) 추천. 사진이 생기면 src="/images/stay/파일명.webp" 를 붙이면 된다 */}
+      <Photo label="외관 전경" className="mt-8 aspect-video" sizes="(max-width: 768px) 100vw, 768px" priority />
 
       <Section title="이름에 담은 마음">
         <p>
