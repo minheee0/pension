@@ -32,14 +32,19 @@ export default function Logo({ size = "sm", tone = "dark" }: { size?: "sm" | "lg
   const sub = light ? "text-hanji/80" : "text-giwa";
 
   if (size === "lg") {
+    // 홈 첫 화면 로고 크기 (앞 값 = 폰, md: = 컴퓨터). 지붕은 높이:너비 ≈ 1:3.5 로 함께 바꿀 것
+    //  - 처음(가장 큼): 지붕 h-12 w-40 / md:h-16 md:w-56 · 글자 text-5xl / md:text-7xl · 영문 text-[11px] / md:text-sm
+    //  - 1차 축소:      지붕 h-8 w-28 / md:h-11 md:w-40  · 글자 text-4xl / md:text-5xl · 영문 text-[10px] / md:text-xs
+    //  - 현재(중간):    지붕 h-10 w-36 / md:h-14 md:w-48 · 글자 text-[42px] / md:text-6xl · 영문 text-[11px] / md:text-[13px]
     return (
       <span className="inline-flex flex-col items-center">
-        <RoofMark className="h-8 w-28 md:h-11 md:w-40" roofClass={roof} postClass={post} />
-        <span className={`-mt-1 pl-[0.2em] font-serif text-4xl font-bold tracking-[0.2em] md:text-5xl ${name}`}>{SITE.name}</span>
-        <span className={`mt-1.5 pl-[0.4em] font-serif text-[10px] tracking-[0.4em] md:text-xs ${sub}`}>MANBOK HANOK STAY</span>
+        <RoofMark className="h-10 w-36 md:h-14 md:w-48" roofClass={roof} postClass={post} />{/* 지붕 크기 */}
+        <span className={`-mt-1 pl-[0.2em] font-serif text-[42px] font-bold tracking-[0.2em] md:text-6xl ${name}`}>{SITE.name}</span>{/* "만복" 글자 크기 */}
+        <span className={`mt-2 pl-[0.4em] font-serif text-[11px] tracking-[0.4em] md:text-[13px] ${sub}`}>MANBOK HANOK STAY</span>{/* 영문 크기 */}
       </span>
     );
   }
+  // 헤더·바닥글 로고 크기: 지붕 h-[15px] w-[52px] · 글자 text-2xl
   return (
     <span className="inline-flex flex-col items-center leading-none">
       <RoofMark className="h-[15px] w-[52px]" roofClass={roof} postClass={post} />
