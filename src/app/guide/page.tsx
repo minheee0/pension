@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Bullets, PageShell, Section } from "@/components/PageLayout";
 import RefundTable from "@/components/RefundTable";
 import { pool } from "@/server/db";
 import { getPolicyView } from "@/server/booking/policy";
@@ -17,39 +18,29 @@ const FAQ = [
 export default async function Guide() {
   const view = await getPolicyView(pool).catch(() => null);
   return (
-    <div className="mx-auto max-w-3xl px-5 py-16">
-      <h1 className="font-serif text-4xl font-bold text-wood">이용안내</h1>
+    <PageShell title="이용안내" lead="머무시기 전에 꼭 확인해 주세요.">
+      <Section title="체크인 · 체크아웃">
+        <p>체크인 {SITE.checkIn} / 체크아웃 {SITE.checkOut}</p>
+      </Section>
 
-      <section className="mt-10">
-        <h2 className="font-serif text-2xl font-bold">체크인 · 체크아웃</h2>
-        <p className="mt-2 text-giwa">체크인 {SITE.checkIn} / 체크아웃 {SITE.checkOut}</p>
-      </section>
+      <Section title="이용 규칙">
+        <Bullets items={["(금연 · 소음 · 반려동물 · 화기 사용 규칙을 입력해 주세요.)"]} />
+      </Section>
 
-      <section className="mt-10">
-        <h2 className="font-serif text-2xl font-bold">이용 규칙</h2>
-        <ul className="mt-2 list-disc space-y-1 pl-5 text-giwa">
-          <li>(금연 · 소음 · 반려동물 · 화기 사용 규칙을 입력해 주세요.)</li>
-        </ul>
-      </section>
+      <Section title="취소 · 환불 규정">
+        {view ? <div className="text-ink"><RefundTable view={view} /></div> : <p>규정을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>}
+      </Section>
 
-      <section className="mt-10">
-        <h2 className="font-serif text-2xl font-bold">취소 · 환불 규정</h2>
-        <div className="mt-3">
-          {view ? <RefundTable view={view} /> : <p className="text-giwa">규정을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.</p>}
-        </div>
-      </section>
-
-      <section className="mt-10">
-        <h2 className="font-serif text-2xl font-bold">자주 묻는 질문</h2>
-        <div className="mt-3 divide-y divide-line border-y border-line">
+      <Section title="자주 묻는 질문">
+        <div className="divide-y divide-line border-y border-line">
           {FAQ.map(([q, a]) => (
             <details key={q} className="py-3">
-              <summary className="cursor-pointer font-medium">{q}</summary>
-              <p className="mt-2 text-giwa">{a}</p>
+              <summary className="cursor-pointer font-medium text-ink">{q}</summary>
+              <p className="mt-2">{a}</p>
             </details>
           ))}
         </div>
-      </section>
-    </div>
+      </Section>
+    </PageShell>
   );
 }

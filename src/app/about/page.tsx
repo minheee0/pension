@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Photo from "@/components/Photo";
+import { PageShell, Section } from "@/components/PageLayout";
 import { isPlaceholder } from "@/lib/legal";
 import { SITE } from "@/lib/site";
 
@@ -11,20 +12,17 @@ const hasPhone = !isPlaceholder(SITE.phone);
 
 export default function About() {
   return (
-    <div className="mx-auto max-w-3xl px-5 py-16">
-      <h1 className="font-serif text-4xl font-bold text-wood">{SITE.name} 이야기</h1>
+    <PageShell title={`${SITE.name} 이야기`} lead={SITE.tagline}>
       <Photo label="한옥 전경" className="mt-8 aspect-video" />
 
-      <section className="mt-12 space-y-3">
-        <h2 className="font-serif text-2xl font-bold">이름에 담은 마음</h2>
+      <Section title="이름에 담은 마음">
         <p>
           ‘만복(萬福)’은 온갖 복을 뜻합니다. 이곳에 머무는 하루가 누군가에게는 오랜만의 가족 모임이고,
           누군가에게는 바쁜 일상 속 쉼표일 거라 생각했습니다. 그 하루에 복이 가득하길 바라는 마음으로 이름을 지었습니다.
         </p>
-      </section>
+      </Section>
 
-      <section className="mt-12 space-y-3">
-        <h2 className="font-serif text-2xl font-bold">이런 분들께 추천해요</h2>
+      <Section title="이런 분들께 추천해요">
         <ul className="grid gap-3 sm:grid-cols-2">
           {[
             ["가족 모임", "부모님, 아이들과 함께 오랜만에 한자리에"],
@@ -33,21 +31,20 @@ export default function About() {
             ["특별한 날", "생일, 기념일을 한옥에서 오붓하게"],
           ].map(([t, d]) => (
             <li key={t} className="rounded-lg border border-line bg-white/60 p-4">
-              <p className="font-serif font-bold">{t}</p>
-              <p className="mt-1 text-sm text-giwa">{d}</p>
+              <p className="font-serif font-bold text-ink">{t}</p>
+              <p className="mt-1 text-sm">{d}</p>
             </li>
           ))}
         </ul>
-      </section>
+      </Section>
 
       {hasAddress && (
-        <section className="mt-12 space-y-1">
-          <h2 className="font-serif text-2xl font-bold">오시는 길</h2>
-          <p>{SITE.address}</p>
-          {hasPhone && <p className="text-giwa">{SITE.phone}</p>}
-          <Photo label="지도" className="mt-3 aspect-video" />
-        </section>
+        <Section title="오시는 길">
+          <p className="text-ink">{SITE.address}</p>
+          {hasPhone && <p>{SITE.phone}</p>}
+          <Photo label="지도" className="aspect-video" />
+        </Section>
       )}
-    </div>
+    </PageShell>
   );
 }
