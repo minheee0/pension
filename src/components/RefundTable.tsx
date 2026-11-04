@@ -8,7 +8,7 @@ export default function RefundTable({ view }: { view: PolicyView }) {
     <div className="text-sm">
       {!view.confirmed && (
         <p className="mb-3 rounded border border-red-800/30 bg-red-50 p-2 text-red-800">
-          ※ 개발 중 임시 규정입니다. 오픈 전에 확정 후 게시됩니다.
+          ※ 임시 규정입니다. 확정 후 다시 게시됩니다.
         </p>
       )}
 

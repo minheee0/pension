@@ -2,6 +2,7 @@ import Link from "next/link";
 import Photo from "@/components/Photo";
 import HomeReviews from "@/components/reviews/HomeReviews";
 import HomeSearch from "@/components/reserve/HomeSearch";
+import { isPlaceholder } from "@/lib/legal";
 import { SITE } from "@/lib/site";
 
 export const dynamic = "force-dynamic";   // 후기를 DB에서 읽어 오므로 매 요청마다 만든다
@@ -54,11 +55,15 @@ export default function Home() {
 
       <HomeReviews />
 
-      <section className="mx-auto mt-20 max-w-5xl px-5">
-        <h2 className="font-serif text-3xl font-bold text-wood">오시는 길</h2>
-        <p className="mt-3">{SITE.address}</p>
-        <p className="text-giwa">{SITE.phone}</p>
-      </section>
+      {/* 주소가 정해지기 전("(입력 필요)")에는 오시는 길을 숨긴다. 자세한 안내는 소개 페이지 */}
+      {!isPlaceholder(SITE.address) && (
+        <section className="mx-auto mt-20 max-w-5xl px-5">
+          <h2 className="font-serif text-3xl font-bold text-wood">오시는 길</h2>
+          <p className="mt-3">{SITE.address}</p>
+          {!isPlaceholder(SITE.phone) && <p className="text-giwa">{SITE.phone}</p>}
+          <Link href="/about" className="mt-3 inline-block border-b border-wood pb-0.5 text-wood">지도 보기 →</Link>
+        </section>
+      )}
     </>
   );
 }
