@@ -34,9 +34,9 @@ export default function Logo({ size = "sm", tone = "dark" }: { size?: "sm" | "lg
   if (size === "lg") {
     return (
       <span className="inline-flex flex-col items-center">
-        <RoofMark className="h-12 w-40 md:h-16 md:w-56" roofClass={roof} postClass={post} />
-        <span className={`-mt-1 pl-[0.2em] font-serif text-5xl font-bold tracking-[0.2em] md:text-7xl ${name}`}>{SITE.name}</span>
-        <span className={`mt-2 pl-[0.4em] font-serif text-[11px] tracking-[0.4em] md:text-sm ${sub}`}>MANBOK HANOK STAY</span>
+        <RoofMark className="h-8 w-28 md:h-11 md:w-40" roofClass={roof} postClass={post} />
+        <span className={`-mt-1 pl-[0.2em] font-serif text-4xl font-bold tracking-[0.2em] md:text-5xl ${name}`}>{SITE.name}</span>
+        <span className={`mt-1.5 pl-[0.4em] font-serif text-[10px] tracking-[0.4em] md:text-xs ${sub}`}>MANBOK HANOK STAY</span>
       </span>
     );
   }
