@@ -14,13 +14,29 @@ export default function Stay() {
         <Photo label="마당" className="aspect-[4/3]" />
         <Photo label="찜질방" className="aspect-[4/3]" />
       </div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <Photo label="자쿠지" className="aspect-[4/3]" />
+        <Photo label="족욕 공간" className="aspect-[4/3]" />
+      </div>
 
       <div className="grid gap-x-8 md:grid-cols-2">
         <Section title="공간 구성">
-          <Bullets items={["(방 개수 · 침구 구성 입력)", "(화장실 · 주방 · 마루 등 입력)"]} />
+          <Bullets items={[
+            `방 2개 · 침구 최대 ${SITE.maxGuests}인분`,
+            "대청마루 거실",
+            "주방 · 욕실 1개",
+            "전용 마당 · 찜질방",
+            "자쿠지 · 족욕 공간 (무료 이용)",
+          ]} />
         </Section>
         <Section title="편의시설">
-          <Bullets items={["(에어컨 · 난방 · Wi-Fi · 주차 등 입력)"]} />
+          <Bullets items={[
+            "냉난방 (에어컨 · 보일러)",
+            "무료 Wi-Fi",
+            "주방: 냉장고 · 전자레인지 · 기본 조리도구 · 식기",
+            "욕실: 수건 · 샴푸 · 바디워시 · 드라이기",
+            "전용 주차 공간",
+          ]} />
         </Section>
       </div>
 
