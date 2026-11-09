@@ -1,3 +1,5 @@
+import { SHOW_PLACEHOLDERS } from "@/lib/site";
+
 /**
  * 영상 칸. src 가 있으면 재생 버튼으로 보는 영상(소리 포함)을, 없으면 "(영상 자리)" 자리표시를 보여 준다.
  *  - 영상 파일은 public/videos/ 에 둔다. 웹용으로 줄인 mp4(H.264, 가로 1280px 안팎, 10MB 이하)를 권장
@@ -6,6 +8,7 @@
 export default function Video({ label, src, poster, className = "" }: {
   label: string; src?: string; poster?: string; className?: string;
 }) {
+  if (!src && !SHOW_PLACEHOLDERS) return null;   // 배포 사이트에서는 영상 없는 칸을 숨긴다
   if (src) {
     return (
       <video controls playsInline preload="metadata" poster={poster} aria-label={label}

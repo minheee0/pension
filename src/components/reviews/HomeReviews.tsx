@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SHOW_PLACEHOLDERS } from "@/lib/site";
 import { pool } from "@/server/db";
 import { listPublicReviews, reviewSummary } from "@/server/reviews/service";
 import ReviewList from "./ReviewList";
@@ -9,6 +10,8 @@ export default async function HomeReviews() {
   let data: Awaited<ReturnType<typeof load>> | null = null;
   try { data = await load(); }
   catch (e) { console.error("[reviews] 홈 화면 후기를 불러오지 못했습니다:", (e as Error).message); data = null; }   // DB 문제가 있어도 홈은 열린다
+  // 후기가 없으면(또는 불러오지 못하면) 배포 사이트에서는 섹션 자체를 숨긴다
+  if (!(data && data.summary.count > 0) && !SHOW_PLACEHOLDERS) return null;
   return (
     <section className="mx-auto mt-20 max-w-5xl px-5">
       <div className="flex flex-wrap items-end justify-between gap-2">

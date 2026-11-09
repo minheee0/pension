@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SHOW_PLACEHOLDERS } from "@/lib/site";
 
 /**
  * 사진 칸. src 가 있으면 실제 사진(숙소 사진은 public/images/stay/…)을 칸 크기에 맞게 잘라 보여 주고,
@@ -7,6 +8,7 @@ import Image from "next/image";
 export default function Photo({ label, src, className = "", sizes = "(max-width: 768px) 100vw, 50vw", priority = false }: {
   label: string; src?: string; className?: string; sizes?: string; priority?: boolean;
 }) {
+  if (!src && !SHOW_PLACEHOLDERS) return null;   // 배포 사이트에서는 사진 없는 칸을 숨긴다
   if (src) {
     return (
       <div className={`relative overflow-hidden rounded-lg bg-line ${className}`}>

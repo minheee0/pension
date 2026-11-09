@@ -3,9 +3,11 @@ import Link from "next/link";
 import Photo from "@/components/Photo";
 import { Bullets, PageShell, Section } from "@/components/PageLayout";
 import Video from "@/components/Video";
-import { SITE } from "@/lib/site";
+import { SHOW_PLACEHOLDERS, SITE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "독채 안내" };
+
+const TOUR_VIDEO: string | undefined = undefined;   // 예: "/videos/tour.mp4"
 
 export default function Stay() {
   return (
@@ -23,10 +25,13 @@ export default function Stay() {
         <Photo label="족욕 공간" className="aspect-[4/3]" />
       </div>
 
-      {/* 영상 자리: 영상 파일을 public/videos 에 넣고 src="/videos/파일명.mp4" 를 붙이면 재생 화면으로 바뀐다 */}
-      <Section title="영상으로 둘러보기">
-        <Video label="독채 둘러보기" poster="/images/stay/living.webp" className="aspect-video" />
-      </Section>
+      {/* 영상 자리: 영상 파일을 public/videos 에 넣고 TOUR_VIDEO 에 경로를 적으면 재생 화면으로 바뀐다.
+          영상이 없으면 배포 사이트에서는 이 섹션 전체를 숨긴다 */}
+      {(TOUR_VIDEO || SHOW_PLACEHOLDERS) && (
+        <Section title="영상으로 둘러보기">
+          <Video label="독채 둘러보기" src={TOUR_VIDEO} poster="/images/stay/living.webp" className="aspect-video" />
+        </Section>
+      )}
 
       <div className="grid gap-x-8 md:grid-cols-2">
         <Section title="공간 구성">

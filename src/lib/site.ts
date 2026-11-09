@@ -18,3 +18,10 @@ export const SITE = {
     lodgingNo: "(숙박업 등록번호)",
   },
 };
+
+/**
+ * 빈 칸("사진 자리", "영상 자리", "(입력 필요)", 후기 0개 안내)을 보여 줄지.
+ * 내 컴퓨터(npm run dev)에서는 어디에 무엇을 채워야 하는지 보이도록 표시하고,
+ * 배포된 사이트(production)에서는 손님에게 미완성처럼 보이지 않게 숨긴다.
+ */
+export const SHOW_PLACEHOLDERS = process.env.NODE_ENV !== "production";
