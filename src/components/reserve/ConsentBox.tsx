@@ -8,9 +8,10 @@ const link = "underline underline-offset-2 text-wood";
 /** 예약 동의: 이용약관 · 개인정보 수집·이용 · 취소·환불 규정 (모두 필수). '전체 동의'로 한 번에 선택할 수 있다. */
 export default function ConsentBox({ value, onChange }: { value: Consent; onChange: (c: Consent) => void }) {
   const all = isAllAgreed(value);
-  const box = "mt-1";
+  const box = "mt-0.5";
   return (
-    <fieldset className="mt-5 space-y-2 text-sm">
+    // 줄마다 위아래 여백(py-1)을 줘서 글자까지 포함한 누를 수 있는 영역을 넓힌다
+    <fieldset className="mt-5 space-y-1 text-sm [&_label]:cursor-pointer [&_label]:py-1">
       <legend className="sr-only">약관 동의</legend>
       <label className="flex items-start gap-2 font-medium">
         <input type="checkbox" className={box} checked={all} onChange={(e) => onChange({ terms: e.target.checked, privacy: e.target.checked, refund: e.target.checked })} />

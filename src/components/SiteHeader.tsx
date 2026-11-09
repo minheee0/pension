@@ -19,15 +19,16 @@ export default function SiteHeader() {
         <div className="flex items-center gap-6 text-sm">
           <nav className="hidden items-center gap-6 md:flex">
             {NAV.map((n) => (
-              <Link key={n.href} href={n.href} className="whitespace-nowrap hover:text-wood">{n.label}</Link>
+              <Link key={n.href} href={n.href} className="whitespace-nowrap py-2 hover:text-wood">{n.label}</Link>
             ))}
           </nav>
           <Link href="/reserve" className="whitespace-nowrap rounded bg-wood px-4 py-2 text-hanji hover:bg-giwa">예약하기</Link>
         </div>
       </div>
-      <nav className="flex gap-5 overflow-x-auto whitespace-nowrap px-5 pb-2.5 text-sm md:hidden">
+      {/* 모바일 메뉴: 각 항목에 위아래·좌우 여백을 줘서 손가락으로 누르는 영역을 40px 이상으로 */}
+      <nav className="flex gap-1 overflow-x-auto whitespace-nowrap px-3 text-sm md:hidden">
         {NAV.map((n) => (
-          <Link key={n.href} href={n.href} className="shrink-0 hover:text-wood">{n.label}</Link>
+          <Link key={n.href} href={n.href} className="shrink-0 px-2 py-2.5 hover:text-wood">{n.label}</Link>
         ))}
       </nav>
     </header>

@@ -21,8 +21,8 @@ export default function SiteFooter() {
         <p className="pb-2"><Logo tone="light" /></p>
         {lines.map((l) => <p key={l}>{l}</p>)}
         <p className="flex gap-4 pt-3 text-xs">
-          <Link href="/terms" className="underline underline-offset-2 hover:text-hanji">이용약관</Link>
-          <Link href="/privacy" className="font-bold text-hanji underline underline-offset-2">개인정보처리방침</Link>
+          <Link href="/terms" className="inline-block py-2 underline underline-offset-2 hover:text-hanji">이용약관</Link>
+          <Link href="/privacy" className="inline-block py-2 font-bold text-hanji underline underline-offset-2">개인정보처리방침</Link>
         </p>
       </div>
     </footer>

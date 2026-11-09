@@ -19,3 +19,6 @@
 }
 
 body { background: var(--hanji); color: var(--ink); line-height: 1.75; }
+
+/* 체크박스·라디오: 기본 13px 는 손가락으로 누르기 어려워 20px 로 키우고 사이트 색(목재)으로 맞춘다 */
+input[type="checkbox"], input[type="radio"] { width: 1.25rem; height: 1.25rem; flex-shrink: 0; accent-color: var(--wood); cursor: pointer; }
