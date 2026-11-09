@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import Photo from "@/components/Photo";
@@ -11,7 +12,10 @@ export const dynamic = "force-dynamic";   // 후기를 DB에서 읽어 오므로
 export default function Home() {
   return (
     <>
-      <section className="bg-gradient-to-b from-wood to-giwa text-hanji">
+      {/* 첫 화면: 거실 사진 배경 + 어두운 덧칠(글자가 잘 읽히게). 배경 사진은 src 만 바꾸면 교체된다 */}
+      <section className="relative isolate overflow-hidden bg-giwa text-hanji">
+        <Image src="/images/stay/living.webp" alt="" fill priority sizes="100vw" className="-z-10 object-cover" />
+        <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-b from-ink/75 via-ink/55 to-ink/80" />
         <div className="mx-auto max-w-5xl px-5 py-20 md:py-32">
           <p className="text-sm tracking-[0.3em] opacity-80">{SITE.region ? `${SITE.region} · ` : ""}프라이빗 한옥 스테이</p>
           <h1 className="mt-6"><Logo size="lg" tone="light" /></h1>
