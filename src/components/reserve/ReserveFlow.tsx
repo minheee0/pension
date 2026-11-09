@@ -338,7 +338,7 @@ export default function ReserveFlow(props: {
         )}
       </div>
 
-      <aside className="md:sticky md:top-20 md:self-start">
+      <aside id="summary" className="scroll-mt-32 md:sticky md:top-20 md:self-start">
         <div className="rounded-lg border border-line bg-white p-5">
           <h2 className="font-serif text-xl font-bold">요금 안내</h2>
           {!checkIn || !checkOut ? (
@@ -371,6 +371,29 @@ export default function ReserveFlow(props: {
           <p className="mt-2 text-xs text-giwa">버튼을 누르면 날짜가 15분간 임시 확보됩니다.</p>
         </div>
       </aside>
+
+      {/* 모바일 하단 고정 바: 요금 안내가 페이지 맨 아래에 있어도 합계와 다음 단계를 항상 보이게 한다 */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-hanji/95 px-5 py-3 backdrop-blur md:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            {q && checkIn && checkOut && !quoteErr ? (
+              <>
+                <p className="text-xs text-giwa">{fmtDate(checkIn)} → {fmtDate(checkOut)} · {q.nightsCount}박 · {guests}명</p>
+                <p className="font-serif text-lg font-bold text-ink">{won(q.totalAmount)}</p>
+              </>
+            ) : (
+              <p className="text-sm text-giwa">{checkIn ? "체크아웃 날짜를 선택하세요" : "날짜를 선택하세요"}</p>
+            )}
+          </div>
+          {canSubmit ? (
+            <button type="button" onClick={submit} className="shrink-0 rounded bg-wood px-5 py-3 text-hanji">{submitting ? "처리 중…" : "예약 진행하기"}</button>
+          ) : q && checkIn && checkOut ? (
+            // 아직 필요한 항목(이름·연락처·동의 등)이 있으면 요금 안내로 이동해 확인하게 한다
+            <a href="#summary" className="shrink-0 rounded bg-wood px-5 py-3 text-hanji">요금·동의 확인</a>
+          ) : null}
+        </div>
+      </div>
+      <div aria-hidden="true" className="h-16 md:hidden" />{/* 하단 고정 바에 마지막 내용이 가려지지 않게 */}
     </div>
   );
 }
