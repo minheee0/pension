@@ -5,6 +5,7 @@ import HomeReviews from "@/components/reviews/HomeReviews";
 import HomeSearch from "@/components/reserve/HomeSearch";
 import { isPlaceholder } from "@/lib/legal";
 import { SITE } from "@/lib/site";
+import { textLink } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";   // 후기를 DB에서 읽어 오므로 매 요청마다 만든다
 
@@ -43,7 +44,7 @@ export default function Home() {
         <div className="self-center">
           <h2 className="font-serif text-3xl font-bold text-wood">독채 안내</h2>
           <p className="mt-3 text-giwa">기준 {SITE.baseGuests}명, 최대 {SITE.maxGuests}명까지 머물 수 있습니다. 요금은 예약 달력에서 날짜별로 확인하실 수 있어요.</p>
-          <Link href="/stay" className="mt-5 inline-block border-b border-wood pb-0.5 text-wood">공간 자세히 보기 →</Link>
+          <Link href="/stay" className={`mt-5 inline-block ${textLink}`}>공간 자세히 보기 →</Link>
         </div>
       </section>
 
@@ -63,7 +64,7 @@ export default function Home() {
           <h2 className="font-serif text-3xl font-bold text-wood">오시는 길</h2>
           <p className="mt-3">{SITE.address}</p>
           {!isPlaceholder(SITE.phone) && <p className="text-giwa">{SITE.phone}</p>}
-          <Link href="/about" className="mt-3 inline-block border-b border-wood pb-0.5 text-wood">지도 보기 →</Link>
+          <Link href="/about" className={`mt-3 inline-block ${textLink}`}>지도 보기 →</Link>
         </section>
       )}
     </>

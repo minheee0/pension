@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { button } from "@/lib/ui";
 
 export type PayMethod = "CARD" | "VIRTUAL_ACCOUNT";
 export type CashReceiptType = "소득공제" | "지출증빙" | "미발행";
@@ -57,7 +58,7 @@ export default function PayButton({ bookingNo, label = "결제하기", method = 
   return (
     <div>
       <button type="button" onClick={pay} disabled={busy}
-        className="w-full rounded bg-wood px-4 py-3 text-hanji hover:bg-giwa disabled:cursor-not-allowed disabled:opacity-40">
+        className={button("primary", "md", { full: true })}>
         {busy ? "결제창 여는 중…" : label}
       </button>
       {err && <p role="alert" className="mt-2 text-sm text-red-800">{err}</p>}

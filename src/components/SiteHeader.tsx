@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { SITE } from "@/lib/site";
+import { button } from "@/lib/ui";
 
 const NAV = [
   { href: "/about", label: "소개" },
@@ -22,7 +23,7 @@ export default function SiteHeader() {
               <Link key={n.href} href={n.href} className="whitespace-nowrap py-2 hover:text-wood">{n.label}</Link>
             ))}
           </nav>
-          <Link href="/reserve" className="whitespace-nowrap rounded bg-wood px-4 py-2 text-hanji hover:bg-giwa">예약하기</Link>
+          <Link href="/reserve" className={`whitespace-nowrap ${button("primary", "sm")}`}>예약하기</Link>
         </div>
       </div>
       {/* 모바일 메뉴: 각 항목에 위아래·좌우 여백을 줘서 손가락으로 누르는 영역을 40px 이상으로 */}

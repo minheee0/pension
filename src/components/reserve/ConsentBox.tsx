@@ -1,9 +1,10 @@
 "use client";
 
+import { textLink } from "@/lib/ui";
 export interface Consent { terms: boolean; privacy: boolean; refund: boolean }
 export const isAllAgreed = (c: Consent) => c.terms && c.privacy && c.refund;
 
-const link = "underline underline-offset-2 text-wood";
+const link = textLink;
 
 /** 예약 동의: 이용약관 · 개인정보 수집·이용 · 취소·환불 규정 (모두 필수). '전체 동의'로 한 번에 선택할 수 있다. */
 export default function ConsentBox({ value, onChange }: { value: Consent; onChange: (c: Consent) => void }) {

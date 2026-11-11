@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import AccountBox from "./AccountBox";
+import { button, textLink } from "@/lib/ui";
 
 interface Booking { bookingNo: string; checkIn: string; checkOut: string; nights: number; guests: number; totalAmount: number }
 interface Va { bankCode: string; accountNumber: string; holderName: string | null; dueDate: string | null }
@@ -52,7 +53,7 @@ export default function ConfirmClient(p: { paymentKey: string; orderId: string; 
         <p className="mt-2 text-sm">입금이 확인되면 예약이 확정됩니다. 예약번호 <b className="tracking-wider">{st.booking.bookingNo}</b></p>
         <div className="mt-4"><AccountBox va={st.va} amount={st.amount} /></div>
         <p className="mt-4 text-sm text-giwa">입금 정보와 예약 상태는 언제든 예약 조회에서 다시 확인할 수 있습니다.</p>
-        <div className="mt-5 flex gap-3"><Link href="/lookup" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">예약 조회</Link><Link href="/" className="rounded border border-wood px-5 py-2 text-wood">홈으로</Link></div>
+        <div className="mt-5 flex gap-3"><Link href="/lookup" className={button("primary", "md")}>예약 조회</Link><Link href="/" className={button("secondary", "md")}>홈으로</Link></div>
       </div>
     );
   }
@@ -62,7 +63,7 @@ export default function ConfirmClient(p: { paymentKey: string; orderId: string; 
       <div className={box}>
         <h2 className="font-serif text-2xl font-bold">가상계좌를 발급하지 못했습니다</h2>
         <p className="mt-3">결제하시는 사이 선택하신 날짜를 다른 예약이 가져갔습니다. 발급된 계좌는 자동으로 닫혔으니 <b>입금하지 마세요.</b></p>
-        <div className="mt-5"><Link href="/reserve" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">다른 날짜 보기</Link></div>
+        <div className="mt-5"><Link href="/reserve" className={button("primary", "md")}>다른 날짜 보기</Link></div>
       </div>
     );
   }
@@ -79,8 +80,8 @@ export default function ConfirmClient(p: { paymentKey: string; orderId: string; 
           <div className="flex justify-between"><dt>결제 금액</dt><dd>{won(b.totalAmount)}</dd></div>
         </dl>
         <p className="mt-4 text-sm text-giwa">예약번호와 예약 시 입력한 휴대폰 번호는 조회·취소에 필요하니 꼭 보관해 주세요.</p>
-        {st.receiptUrl && <a href={st.receiptUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block underline">매출전표 보기</a>}
-        <div className="mt-5 flex gap-3"><Link href="/lookup" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">예약 조회</Link><Link href="/" className="rounded border border-wood px-5 py-2 text-wood">홈으로</Link></div>
+        {st.receiptUrl && <a href={st.receiptUrl} target="_blank" rel="noreferrer" className={`mt-3 inline-block ${textLink}`}>매출전표 보기</a>}
+        <div className="mt-5 flex gap-3"><Link href="/lookup" className={button("primary", "md")}>예약 조회</Link><Link href="/" className={button("secondary", "md")}>홈으로</Link></div>
       </div>
     );
   }
@@ -95,7 +96,7 @@ export default function ConfirmClient(p: { paymentKey: string; orderId: string; 
         <p className="mt-2 font-medium">{st.refundOk
           ? "결제 금액은 자동으로 전액 취소되었습니다. 카드사에 따라 취소 내역 반영에 며칠 걸릴 수 있습니다."
           : "자동 취소에 실패했습니다. 결제 금액은 반드시 환불해 드리니 아래 연락처로 문의해 주세요."}</p>
-        <div className="mt-5"><Link href="/reserve" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">다른 날짜 보기</Link></div>
+        <div className="mt-5"><Link href="/reserve" className={button("primary", "md")}>다른 날짜 보기</Link></div>
       </div>
     );
   }
@@ -105,7 +106,7 @@ export default function ConfirmClient(p: { paymentKey: string; orderId: string; 
       <h2 className="font-serif text-2xl font-bold">{st.kind === "failed" ? "결제가 승인되지 않았습니다" : "결제 확인이 필요합니다"}</h2>
       <p className="mt-3 text-red-800">{st.message}</p>
       <p className="mt-2 text-sm text-giwa">다시 시도하시거나, 결제되었는데 예약이 확인되지 않으면 문의해 주세요.</p>
-      <div className="mt-5"><Link href="/reserve" className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa">예약 화면으로</Link></div>
+      <div className="mt-5"><Link href="/reserve" className={button("primary", "md")}>예약 화면으로</Link></div>
     </div>
   );
 }

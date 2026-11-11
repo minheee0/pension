@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PaySection from "@/components/reserve/PaySection";
+import { textLink } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "결제 실패", robots: { index: false } };
 
@@ -26,7 +27,7 @@ export default async function PayFail({ searchParams }: { searchParams: Promise<
             <PaySection bookingNo={no} />
           </>
         ) : null}
-        <div className="mt-4"><Link href="/reserve" className="underline">예약 화면으로 돌아가기</Link></div>
+        <div className="mt-4"><Link href="/reserve" className={textLink}>예약 화면으로 돌아가기</Link></div>
       </div>
     </div>
   );

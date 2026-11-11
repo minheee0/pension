@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { bankName } from "@/lib/banks";
+import { button } from "@/lib/ui";
 
 const won = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 const fmtDue = (s: string | null) => {
@@ -22,7 +23,7 @@ export default function AccountBox({ va, amount }: {
         <div className="flex justify-between"><dt>입금 은행</dt><dd className="font-bold">{bankName(va.bankCode)}</dd></div>
         <div className="flex justify-between"><dt>계좌번호</dt>
           <dd className="font-bold tracking-wide">{va.accountNumber}
-            <button type="button" className="ml-2 rounded border border-line px-2 py-0.5 text-xs"
+            <button type="button" className={`ml-2 ${button("secondary", "xs")}`}
               onClick={() => navigator.clipboard?.writeText(va.accountNumber).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); })}>
               {copied ? "복사됨" : "복사"}
             </button></dd></div>

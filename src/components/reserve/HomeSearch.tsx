@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import RangeCalendar, { CalDay, addDays, fmtDate, shiftMonth } from "./RangeCalendar";
 import { SITE } from "@/lib/site";
+import { button } from "@/lib/ui";
 
 const fieldCls = "mt-1 block w-full rounded border border-line bg-white px-3 py-2 text-left text-base";
 
@@ -86,7 +87,7 @@ export default function HomeSearch() {
             ))}
           </select>
         </label>
-        <button type="button" onClick={go} className="rounded bg-wood px-6 py-3 text-hanji hover:bg-giwa md:self-end">
+        <button type="button" onClick={go} className={`${button("primary", "md")} md:self-end`}>
           {checkIn && checkOut ? "예약하기" : "예약 가능일 보기"}
         </button>
       </div>

@@ -4,6 +4,7 @@ import Photo from "@/components/Photo";
 import { Bullets, PageShell, Section } from "@/components/PageLayout";
 import Video from "@/components/Video";
 import { SHOW_PLACEHOLDERS, SITE } from "@/lib/site";
+import { button } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "독채 안내" };
 
@@ -68,7 +69,7 @@ export default function Stay() {
         ]} />
       </Section>
 
-      <Link href="/reserve" className="mt-12 inline-block rounded bg-wood px-8 py-3 text-hanji hover:bg-giwa">예약 가능일 보기</Link>
+      <Link href="/reserve" className={`mt-12 ${button("primary", "md")}`}>예약 가능일 보기</Link>
     </PageShell>
   );
 }

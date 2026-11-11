@@ -7,6 +7,7 @@ import PaySection from "./PaySection";
 import ConsentBox, { isAllAgreed, type Consent } from "./ConsentBox";
 import type { PolicyView } from "@/server/refund/table";
 import { SITE } from "@/lib/site";
+import { button, textLink } from "@/lib/ui";
 
 interface OptionInfo {
   id: number; code: string; name: string; description: string | null; price: number;
@@ -327,7 +328,7 @@ export default function ReserveFlow(props: {
             <label className="text-sm sm:col-span-2">이메일 (선택)<input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
             <label className="text-sm sm:col-span-2">요청사항 (선택)<textarea className={inputCls} rows={3} maxLength={500} value={memo} onChange={(e) => setMemo(e.target.value)} /></label>
           </div>
-          <p className="mt-2 text-xs text-giwa">예약 확인·결제·이용 안내에 사용하며, 조회·취소 시 예약번호와 함께 필요합니다. 자세한 내용은 <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">개인정보처리방침</a>을 확인해 주세요.</p>
+          <p className="mt-2 text-xs text-giwa">예약 확인·결제·이용 안내에 사용하며, 조회·취소 시 예약번호와 함께 필요합니다. 자세한 내용은 <a href="/privacy" target="_blank" rel="noopener noreferrer" className={textLink}>개인정보처리방침</a>을 확인해 주세요.</p>
         </section>
 
         {policy && (
@@ -362,7 +363,7 @@ export default function ReserveFlow(props: {
           <ConsentBox value={consent} onChange={setConsent} />
           {submitErr && <p className="mt-3 text-sm text-red-800">{submitErr}</p>}
           <button type="button" onClick={submit} disabled={!canSubmit}
-            className="mt-4 w-full rounded bg-wood px-4 py-3 text-hanji hover:bg-giwa disabled:cursor-not-allowed disabled:opacity-40">
+            className={`mt-4 ${button("primary", "md", { full: true })}`}>
             {submitting ? "처리 중…" : "예약 진행하기"}
           </button>
           {!canSubmit && !submitting && missing.length > 0 && (
@@ -386,10 +387,10 @@ export default function ReserveFlow(props: {
             )}
           </div>
           {canSubmit ? (
-            <button type="button" onClick={submit} className="shrink-0 rounded bg-wood px-5 py-3 text-hanji">{submitting ? "처리 중…" : "예약 진행하기"}</button>
+            <button type="button" onClick={submit} className={`shrink-0 ${button("primary", "md")}`}>{submitting ? "처리 중…" : "예약 진행하기"}</button>
           ) : q && checkIn && checkOut ? (
             // 아직 필요한 항목(이름·연락처·동의 등)이 있으면 요금 안내로 이동해 확인하게 한다
-            <a href="#summary" className="shrink-0 rounded bg-wood px-5 py-3 text-hanji">요금·동의 확인</a>
+            <a href="#summary" className={`shrink-0 ${button("primary", "md")}`}>요금·동의 확인</a>
           ) : null}
         </div>
       </div>
@@ -420,7 +421,7 @@ function HeldView({ held, onRestart }: { held: Held; onRestart: () => void }) {
         <>
           <h2 className="font-serif text-2xl font-bold">임시 확보 시간이 끝났습니다</h2>
           <p className="mt-2 text-giwa">날짜를 다시 선택해 주세요.</p>
-          <button onClick={onRestart} className="mt-5 rounded bg-wood px-6 py-3 text-hanji hover:bg-giwa">다시 예약하기</button>
+          <button onClick={onRestart} className={`mt-5 ${button("primary", "md")}`}>다시 예약하기</button>
         </>
       )}
     </div>

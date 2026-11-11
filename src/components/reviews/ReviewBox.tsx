@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Stars from "./Stars";
+import { button, textLink } from "@/lib/ui";
 
 const DETAILS: [string, string][] = [["cleanliness", "청결"], ["facilities", "시설"], ["location", "위치"], ["atmosphere", "한옥 분위기"], ["service", "응대"]];
 const MIN = 10, MAX = 1000;
@@ -88,7 +89,7 @@ export default function ReviewBox({ bookingNo, phone }: { bookingNo: string; pho
       <p className="text-xs text-giwa">전화번호·이메일·링크는 쓸 수 없습니다. 이름은 홍*동처럼 일부만 표시됩니다. 부적절한 내용은 확인 후 비공개 처리될 수 있습니다.</p>
       {err && <p role="alert" className="text-sm text-red-800">{err}</p>}
       <div className="flex gap-2">
-        <button type="button" disabled={!ok || busy} onClick={() => submit(mode)} className="rounded bg-wood px-5 py-2 text-hanji hover:bg-giwa disabled:cursor-not-allowed disabled:opacity-40">{busy ? "저장 중…" : mode === "create" ? "후기 등록" : "수정 저장"}</button>
+        <button type="button" disabled={!ok || busy} onClick={() => submit(mode)} className={button("primary", "md")}>{busy ? "저장 중…" : mode === "create" ? "후기 등록" : "수정 저장"}</button>
         {mode === "update" && <button type="button" onClick={() => setEditing(false)} className="px-3 underline">취소</button>}
       </div>
     </div>
@@ -111,7 +112,7 @@ export default function ReviewBox({ bookingNo, phone }: { bookingNo: string; pho
           {rv.status === "hidden" && <p className="text-xs text-giwa">이 후기는 비공개로 처리되어 수정·삭제할 수 없습니다. 문의해 주세요.</p>}
           {err && <p role="alert" className="text-sm text-red-800">{err}</p>}
           <div className="flex gap-3 text-sm">
-            {rv.editable && <button type="button" className="underline" onClick={() => startEdit(rv)}>수정</button>}
+            {rv.editable && <button type="button" className={textLink} onClick={() => startEdit(rv)}>수정</button>}
             {rv.deletable && <button type="button" className="text-red-800 underline" onClick={remove} disabled={busy}>삭제</button>}
             {!rv.editable && rv.status !== "hidden" && <span className="text-xs text-giwa">작성 후 7일이 지나 수정할 수 없습니다.</span>}
           </div>

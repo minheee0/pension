@@ -6,6 +6,7 @@ import ReviewBox from "@/components/reviews/ReviewBox";
 import { BANKS } from "@/lib/banks";
 import { formatPhone, PHONE_OK, sanitizePhone } from "@/lib/phone";
 import { SITE } from "@/lib/site";
+import { button, textLink } from "@/lib/ui";
 
 interface Line { kind: string; label: string; amount: number; deduct: number; refund: number; deductRate: number }
 interface Preview { daysBefore: number; lines: Line[]; totalAmount: number; deductTotal: number; refundTotal: number }
@@ -88,7 +89,7 @@ export default function LookupClient() {
             value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} />
         </label>
         {err && <p role="alert" className="text-sm text-red-800">{err}</p>}
-        <button disabled={!formOk || busy} className="w-full rounded bg-wood px-4 py-3 text-hanji hover:bg-giwa disabled:cursor-not-allowed disabled:opacity-40">
+        <button disabled={!formOk || busy} className={button("primary", "md", { full: true })}>
           {busy ? "확인 중…" : "예약 조회"}
         </button>
       </form>
@@ -126,8 +127,8 @@ export default function LookupClient() {
           {b.options.map((o, i) => <div key={i} className="flex justify-between"><dt>{o.name}{o.useDate ? ` ${o.useDate}` : ""}{o.useTime ? ` ${o.useTime}` : ""}</dt><dd>{won(o.amount)}</dd></div>)}
           <div className="flex justify-between border-t border-line pt-2 font-bold"><dt>총 금액</dt><dd>{won(b.totalAmount)}</dd></div>
         </dl>
-        {view.payment?.receiptUrl && <a href={view.payment.receiptUrl} target="_blank" rel="noreferrer" className="mr-4 mt-3 inline-block text-sm underline">{view.payment.method === "가상계좌" ? "거래내역서 보기" : "매출전표 보기"}</a>}
-        {view.payment?.cashReceiptUrl && <a href={view.payment.cashReceiptUrl} target="_blank" rel="noreferrer" className="mt-3 inline-block text-sm underline">현금영수증 보기</a>}
+        {view.payment?.receiptUrl && <a href={view.payment.receiptUrl} target="_blank" rel="noreferrer" className={`mr-4 mt-3 inline-block text-sm ${textLink}`}>{view.payment.method === "가상계좌" ? "거래내역서 보기" : "매출전표 보기"}</a>}
+        {view.payment?.cashReceiptUrl && <a href={view.payment.cashReceiptUrl} target="_blank" rel="noreferrer" className={`mt-3 inline-block text-sm ${textLink}`}>현금영수증 보기</a>}
         {view.refund && !done && (
           <p className="mt-3 text-sm">환불 {won(view.refund.amount)} (공제 {won(view.refund.deductAmount)}) · {REFUND_STATUS[view.refund.status] ?? view.refund.status}</p>
         )}

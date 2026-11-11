@@ -4,6 +4,7 @@ import { pool } from "@/server/db";
 import { listPublicReviews, reviewSummary } from "@/server/reviews/service";
 import ReviewList from "./ReviewList";
 import Stars from "./Stars";
+import { textLink } from "@/lib/ui";
 
 /** 홈 화면의 '머문 분들의 이야기'. DB 오류가 나도 홈 화면 전체가 깨지지 않도록 조용히 대체 문구를 보여준다. */
 export default async function HomeReviews() {
@@ -16,7 +17,7 @@ export default async function HomeReviews() {
     <section className="mx-auto mt-20 max-w-5xl px-5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <h2 className="font-serif text-3xl font-bold text-wood">머문 분들의 이야기</h2>
-        {data && data.summary.count > 0 && <Link href="/reviews" className="text-sm text-wood underline">후기 {data.summary.count}개 모두 보기 →</Link>}
+        {data && data.summary.count > 0 && <Link href="/reviews" className={`text-sm ${textLink}`}>후기 {data.summary.count}개 모두 보기 →</Link>}
       </div>
       {data && data.summary.count > 0 ? (
         <>

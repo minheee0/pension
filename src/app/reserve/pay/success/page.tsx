@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import ConfirmClient from "@/components/reserve/ConfirmClient";
+import { textLink } from "@/lib/ui";
 
 export const metadata: Metadata = { title: "결제 확인", robots: { index: false } };
 
@@ -14,7 +15,7 @@ export default async function PaySuccess({ searchParams }: { searchParams: Promi
       <h1 className="font-serif text-4xl font-bold text-wood">결제 확인</h1>
       {paymentKey && orderId && Number.isInteger(amount) && amount > 0
         ? <ConfirmClient paymentKey={paymentKey} orderId={orderId} amount={amount} />
-        : <p className="mt-8">잘못된 접근입니다. <Link href="/reserve" className="underline">예약 화면으로</Link></p>}
+        : <p className="mt-8">잘못된 접근입니다. <Link href="/reserve" className={textLink}>예약 화면으로</Link></p>}
     </div>
   );
 }

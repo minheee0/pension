@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { button } from "@/lib/ui";
 
 const REASONS: [string, string][] = [["abuse", "욕설·비방"], ["false", "허위 사실"], ["privacy", "개인정보 노출"], ["spam", "광고·스팸"], ["other", "기타"]];
 
@@ -33,7 +34,7 @@ export default function ReportButton({ reviewId }: { reviewId: number }) {
             <select value={reason} onChange={(e) => setReason(e.target.value)} className="ml-2 rounded border border-line px-2 py-1">{REASONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
           <textarea aria-label="신고 내용" value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={300} rows={2} placeholder="자세한 내용 (선택)" className="block w-full rounded border border-line px-2 py-1" />
           <span className="flex gap-2">
-            <button type="button" onClick={send} disabled={busy} className="rounded bg-wood px-3 py-1 text-hanji disabled:opacity-40">{busy ? "접수 중…" : "신고하기"}</button>
+            <button type="button" onClick={send} disabled={busy} className={button("primary", "xs")}>{busy ? "접수 중…" : "신고하기"}</button>
             <button type="button" onClick={() => setOpen(false)} className="px-2 underline">닫기</button>
           </span>
         </span>
