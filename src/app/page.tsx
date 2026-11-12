@@ -49,7 +49,7 @@ export default function Home() {
       </section>
 
       <section className="mx-auto mt-20 max-w-5xl px-5">
-        <dl className="grid gap-4 rounded-lg border border-line p-6 text-center md:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-5 rounded-lg border border-line p-5 text-center md:grid-cols-4 md:p-6">
           {[["체크인", SITE.checkIn], ["체크아웃", SITE.checkOut], ["기준 / 최대", `${SITE.baseGuests}명 / ${SITE.maxGuests}명`], ["숙박 형태", "독채 (1팀)"]].map(([k, v]) => (
             <div key={k}><dt className="text-xs text-giwa">{k}</dt><dd className="font-serif text-xl font-bold">{v}</dd></div>
           ))}
