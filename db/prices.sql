@@ -18,8 +18,9 @@ update base_prices set price = 1500 where day_type = 'weekend';   -- 주말(금�
 update policy_settings set value = '10000' where key = 'extra_person_fee';
 
 -- 3) 유료 옵션 (active = false 로 두면 예약 화면에 나오지 않습니다) ----
-update options set price = 40000, active = true where code = 'bbq';     -- 바비큐
-update options set price = 30000, active = true where code = 'sauna';   -- 찜질방
+-- 바비큐·찜질방은 무료 부대시설로 운영한다 → 유료 옵션은 끈다(예약 화면 옵션 선택·환불표 옵션 안내가 사라짐)
+update options set price = 0, active = false where code = 'bbq';       -- 바비큐
+update options set price = 0, active = false where code = 'sauna';     -- 찜질방
 
 -- 4) 성수기 ---------------------------------------------------
 --    ★ 이 파일이 기준입니다. 실행하면 기존 성수기 등록을 모두 지우고 아래 내용으로 바꿉니다.
